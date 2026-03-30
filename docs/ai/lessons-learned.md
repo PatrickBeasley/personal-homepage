@@ -26,3 +26,11 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: GitHub CLI requires `read:org` scope even for personal account operations  
 **Reusable rule**: When generating a GitHub PAT for `gh` CLI, always include `repo`, `workflow`, `read:org`, and `project` scopes  
 **Action to encode**: Add scope checklist to `project-bootstrap/SKILL.md` Stage 1
+
+## 2026-03-30 — Bootstrap Credential Hygiene
+**Phase/Context**: Resume after initial scaffold and GitHub setup  
+**What worked**: Temporarily embedding the PAT in the git remote unblocked a non-interactive push when credential helper behavior was inconsistent  
+**What failed**: `.env.example` was ignored by the default `.env*` gitignore rule, and the temporary credentialed remote needed immediate cleanup  
+**Root cause**: Default scaffold ignore rules were broader than needed, and git credential behavior was not fully consistent across terminals  
+**Reusable rule**: If a token is ever embedded in a remote URL to unblock automation, reset the remote to a clean URL immediately after push; also verify `.env.example` is force-added or explicitly unignored when the repo ignores `.env*`  
+**Action to encode**: Update bootstrap guidance and repo instructions to check `.env.example` staging and remote URL cleanup
