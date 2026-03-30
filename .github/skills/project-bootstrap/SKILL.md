@@ -21,6 +21,7 @@ description: Use when initializing a new project module or service from scratch 
 ### Stage 1 — Repository
 - [ ] Create GitHub repo with description and license
 - [ ] Clone locally and verify remote
+- [ ] If using a GitHub PAT with `gh`, ensure scopes include `repo`, `workflow`, `read:org`, and `project`
 - [ ] Confirm `.gitignore` covers `node_modules`, `.env*`, `.next`, `supabase/.branches`
 
 ### Stage 2 — App Scaffold
@@ -33,6 +34,7 @@ description: Use when initializing a new project module or service from scratch 
 - [ ] Add: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_EMAIL`
 - [ ] Add same vars to Vercel project environment settings
 - [ ] Verify `.env.local` is git-ignored
+- [ ] Verify `.env.example` is committed even if the repo ignores `.env*`
 
 ### Stage 4 — AI Docs
 - [ ] Create all `.github/` AI markdown files with starter outlines
@@ -65,3 +67,4 @@ description: Use when initializing a new project module or service from scratch 
 - If `create-next-app` fails midway, delete the directory and retry with `--yes` flag
 - If Vercel deploy fails, check environment variables match `.env.example` names exactly
 - If Supabase connection fails, verify `NEXT_PUBLIC_SUPABASE_URL` does not have a trailing slash
+- If git push requires a temporary credentialed remote URL, reset the remote to a clean HTTPS URL immediately after the push succeeds

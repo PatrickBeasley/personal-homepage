@@ -45,3 +45,43 @@ This file tracks significant decisions made about AI workflows, tooling, and con
 **Alternatives considered**: Broader extension list (higher risk surface); public-by-default (accidental exposure risk).  
 **Consequences**: Server-side validation required for both extension and MIME type. Supabase Storage bucket must be private. Signed URLs with short TTL for downloads.  
 **Follow-up tasks**: Implement MIME+extension validation in upload API route; encode rules in `backend.instructions.md`.
+
+---
+
+## 2026-03-30 — Phase 0 Security and Secret Handling Policy
+**Status**: Active  
+**Context**: Phase 0 requires a concrete security baseline before Vercel, Supabase, and Google OAuth setup.  
+**Decision**: Admin access remains single-user at launch and is controlled by the `ADMIN_EMAIL` environment variable. Files are private by default and require an explicit visibility toggle to become public. Secrets live only in local `.env.local`, Vercel environment variables, or Supabase configuration; they must never appear in committed files, issue bodies, or git remote URLs after use. Upload endpoints will enforce extension allowlist, MIME verification, filename sanitization, and a baseline rate limit even for admin-only traffic.  
+**Alternatives considered**: Multi-admin role model at launch (more complexity); public-by-default files (higher accidental exposure risk); storing secrets in repo-level encrypted files (unnecessary for current scope).  
+**Consequences**: Auth and storage code can assume least privilege and explicit allowlists. Operational steps must include credential hygiene, including resetting remotes if a token is embedded temporarily.  
+**Follow-up tasks**: Implement admin allowlist check in auth guard; add upload rate limiting; document token hygiene in bootstrap guidance.
+
+---
+
+## 2026-03-30 — Data Classification, Retention, and Launch Policy Pages
+**Status**: Active  
+**Context**: The site will store public content, contact submissions, and private admin-managed files, so data boundaries need to be explicit before schema work starts.  
+**Decision**: Public data includes homepage content, projects, blog posts, external project links, and only files explicitly marked public. Private data includes contact form submissions, unpublished content, admin audit metadata, and all storage objects without a public toggle. Sensitive data includes all credentials, OAuth secrets, service-role keys, and any signed URL generation inputs. Contact submissions will be retained for 12 months by default unless legal or operational needs change. A privacy policy is required before production launch; terms of use can remain lightweight but should include a download/use disclaimer if public files are offered.  
+**Alternatives considered**: Indefinite retention (higher privacy burden); no privacy page at launch (not appropriate once contact data is stored).  
+**Consequences**: Schema and RLS can separate public tables from private tables cleanly. Production launch is gated on a privacy policy page and retention wording.  
+**Follow-up tasks**: Reflect public/private split in schema design; add retention note to contact-submission implementation; create privacy page before launch.
+
+---
+
+## 2026-03-30 — Observability, Backup Targets, and Budget Guardrails
+**Status**: Active  
+**Context**: Phase 0 includes selecting a practical operations baseline that fits a personal site without over-engineering.  
+**Decision**: Use Sentry for application error tracking and UptimeRobot for external uptime checks, with Vercel native logs used for deployment/runtime diagnostics. Set baseline recovery targets to RPO 24 hours and RTO 8 hours for launch. Treat Supabase automated backups and periodic exports of critical content/file metadata as the minimum backup posture. Keep the initial deployment on Vercel Hobby and Supabase free or starter tier, with a monthly review of storage growth, bandwidth, and runtime usage before any paid upgrade.  
+**Alternatives considered**: Vercel-only monitoring (weaker application-level error workflow); enterprise-grade monitoring stack (too heavy for current scope).  
+**Consequences**: Phase 1 and Phase 5 work can integrate a specific alerting stack rather than leaving monitoring undefined. Restore expectations are clear enough for a personal site without promising enterprise SLA behavior.  
+**Follow-up tasks**: Add Sentry and uptime-monitoring setup tasks; document manual backup/export steps once schema is in place.
+
+---
+
+## 2026-03-30 — Domain and OAuth Ownership Assumption
+**Status**: Active  
+**Context**: Platform setup depends on control of the production domain and OAuth provider configuration, but those are external operational assets.  
+**Decision**: Proceed under the assumption that the project owner controls `patrickbeasley.com` DNS and can manage the Google OAuth application needed for Supabase Auth production callbacks. Treat explicit verification of that access as an operational checklist item before production configuration is applied.  
+**Alternatives considered**: Blocking all setup until ownership is manually re-confirmed (slows progress without changing technical design).  
+**Consequences**: Build work can continue, but the Phase 0 operational verification issue stays open until DNS and OAuth access are confirmed.  
+**Follow-up tasks**: Confirm registrar/DNS access and Google Cloud project ownership before Vercel custom domain and OAuth callback setup.

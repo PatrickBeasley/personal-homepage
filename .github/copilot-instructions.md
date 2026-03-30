@@ -6,7 +6,9 @@ This workspace is the personal homepage for patrickbeasley.com, built with Next.
 ## Non-Negotiables
 - Never commit secrets, tokens, or credentials. All secrets go in `.env.local` (git-ignored) or Vercel environment variables.
 - All auth-protected routes and API handlers must verify the session before acting.
+- Admin-only behavior must key off the `ADMIN_EMAIL` allowlist on the server side; client-side gating alone is never sufficient.
 - File uploads must be validated server-side: allowed extensions (`.pdf`, `.docx`, `.txt`, `.md`, `.sql`, `.py`) and max 10MB per file.
+- Contact submissions are private operational data and must not be exposed to public queries or logs.
 - Every bug fix must include a regression test.
 - Do not skip lint, typecheck, or build verification after changes.
 
@@ -26,6 +28,9 @@ This workspace is the personal homepage for patrickbeasley.com, built with Next.
 - Use `NEXT_PUBLIC_` prefix only for values that are safe to expose to browsers.
 - Service-role Supabase keys must only be used in server-side code (`app/api/`, server components, route handlers).
 - Validate and sanitize all user-supplied input at the API boundary.
+- Remove credentials from git remotes immediately after any temporary token-auth workaround.
+- Treat uploaded files as private by default and generate signed URLs for non-public downloads.
+- Add a baseline rate limit to contact and upload endpoints even when they are admin-only.
 
 ## Verification Expectations
 - Run `npm run lint` and `npm run build` after any non-trivial change.
@@ -40,3 +45,4 @@ This workspace is the personal homepage for patrickbeasley.com, built with Next.
 ## Escalation Rules
 - If a change would affect the production database schema, pause and confirm before executing.
 - If a change modifies auth or RLS policies, flag it explicitly for review before merging.
+- If a production credential, OAuth secret, or signed URL handling flow changes, flag it explicitly for review before merging.
