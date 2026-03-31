@@ -1,0 +1,42 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isAdminEmail } from "@/lib/auth/admin";
+import AdminDashboardClient from "./admin-dashboard-client";
+
+export const metadata: Metadata = {
+  title: "Admin Dashboard",
+  robots: { index: false, follow: false },
+};
+
+export default async function AdminPage() {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    redirect("/auth/login");
+  }
+
+  // Redirect if not admin
+  if (!isAdminEmail(user.email)) {
+    redirect("/");
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2">Manage files and contact submissions</p>
+        </div>
+
+        <AdminDashboardClient userEmail={user.email} />
+      </div>
+    </main>
+  );
+}

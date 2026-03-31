@@ -50,3 +50,19 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: Dashboard save state was not validated against the live auth service configuration  
 **Reusable rule**: After provider setup, always verify `external.google=true` from auth settings and perform one full login callback test before closing auth tasks  
 **Action to encode**: Add provider-status and callback test checklist to bootstrap skill
+
+## 2026-03-31 — Dev Server Startup Fails with "Couldn't Find App Directory" Despite Directory Existing
+**Phase/Context**: Phase 3 — Attempted to start dev server for Playwright testing validation  
+**What worked**: Verified that `app/` directory exists at correct location via Node fs API and directory listing (`Get-ChildItem app/` showed the folder)  
+**What failed**: `npm run dev`, `npx next dev`, and `npx next dev --port 3000` all fail with error "Couldn't find any `pages` or `app` directory"  
+**Root cause**: Unknown — likely one of: (a) cached build state issue, (b) TypeScript compiler not finding app dir during sourcemap/type generation, (c) environment variable issue, (d) Next.js 16 specific edge case with Windows paths  
+**Reusable rule**: If dev server fails to find app directory despite its existence, try: 1) `rm -r .next .turbo` to clean build cache, 2) verify CWD is correct with `pwd`, 3) check tsconfig.json includes app in compilerOptions, 4) try `npx tsc --noEmit` to validate TypeScript, 5) check for .vercelignore or next.config issues, 6) if persists, this may indicate a deeper toolchain issue needing manual troubleshooting or rebuild  
+**Action to encode**: Add "dev server startup troubleshooting" section to `backend.instructions.md` with the above checklist
+
+## 2026-03-31 — Phase 4: Admin Dashboard and File Upload Implementation
+**Phase/Context**: Phase 4 — Admin dashboard with file upload/download/management  
+**What worked**: Creating modular API route handlers with shared admin guard middleware (`requireAdminAuth`); separating concerns into library function for reuse; using Supabase Storage for files with database metadata tracking; reactive React component with tabbed interface for file and contact submission management; error handling with clear user feedback  
+**What failed**: Initial UUID import was incorrect (tried to import `v4` from `crypto` module)  
+**Root cause**: Crypto module doesn't export UUID v4 — should use `crypto.randomUUID()` instead  
+**Reusable rule**: For file uploads, always validate extension AND MIME type server-side; separate storage operations from metadata tracking so cleanup is consistent if one fails; use `crypto.randomUUID()` for Node.js 16+, or import from `uuid` package for compatibility  
+**Action to encode**: Update `backend.instructions.md` with file upload validation pattern and middleware example

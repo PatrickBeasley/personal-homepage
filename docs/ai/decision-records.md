@@ -48,6 +48,16 @@ This file tracks significant decisions made about AI workflows, tooling, and con
 
 ---
 
+## 2026-03-31 — Admin Dashboard Architecture
+**Status**: Active  
+**Context**: Phase 4 required building an admin dashboard for file management and contact form submission handling.  
+**Decision**: Implement admin routes and API endpoints with a shared `requireAdminAuth` middleware that verifies session and admin email. Client-side dashboard is a React component (`"use client"`) with tabbed interface for files and contact submissions. File operations (upload, delete, visibility toggle) use separate HTTP methods on a polymorphic `/api/files/[id]` route. Contact submissions are read-only to admins with status-update capability.  
+**Alternatives considered**: Server-side rendered admin dashboard (less interactive); separate file and contact endpoints (more routes to manage).  
+**Consequences**: All admin API routes are protected by `requireAdminAuth` which must be called first in each handler. The middleware pattern is reusable for future admin endpoints. Client state is local (React useState) rather than server-cached, so list refreshes after mutations.  
+**Follow-up tasks**: Implement optimistic UI updates if performance becomes an issue; consider adding confirmation dialogs for destructive operations; add server-side logging of admin actions for audit trail.
+
+---
+
 ## 2026-03-30 — Phase 0 Security and Secret Handling Policy
 **Status**: Active  
 **Context**: Phase 0 requires a concrete security baseline before Vercel, Supabase, and Google OAuth setup.  

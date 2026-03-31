@@ -44,3 +44,42 @@ applyTo: "app/api/**,lib/**,supabase/**"
 - Use `unstable_cache` or `next/cache` for Supabase reads that do not change per-request.
 - Set appropriate `revalidate` values on static or semi-static pages.
 - Avoid N+1 queries — join or batch-fetch related data.
+
+## Troubleshooting
+
+### Dev Server Won't Start — "Couldn't Find App Directory"
+If `npm run dev` or `npx next dev` fails with error "Couldn't find any `pages` or `app` directory" despite `app/` directory existing:
+
+1. **Verify working directory**:
+   ```bash
+   pwd  # Should show project root where app/ exists
+   ls app/  # Should list app contents (auth/, blog/, page.tsx, etc.)
+   ```
+
+2. **Clean build artifacts**:
+   ```bash
+   rm -r .next .turbo  # Remove cached build state
+   npx next dev
+   ```
+
+3. **Check TypeScript compilation**:
+   ```bash
+   npx tsc --noEmit  # Should report any TypeScript errors
+   ```
+
+4. **Verify tsconfig.json** includes app directory:
+   - Check `compilerOptions.rootDir` and `include` array
+   - Should include `"app/**/*"`
+
+5. **Check for conflicting configs**:
+   - Verify no `.vercelignore` file is excluding `app/`
+   - Verify `next.config.ts` doesn't have conflicting paths or disabled middleware
+
+6. **Last resort — rebuild from scratch**:
+   ```bash
+   rm -r node_modules package-lock.json
+   npm install
+   npm run dev
+   ```
+
+If issue persists after these steps, the project build toolchain may need manual investigation or escalation.
