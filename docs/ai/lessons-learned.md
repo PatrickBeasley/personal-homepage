@@ -82,3 +82,19 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: VS Code workspace is rooted at `C:\Projects` but the Next.js app lives at `C:\Projects\personal-homepage`; terminal `cwd` defaulted to the workspace root, not the project subfolder  
 **Reusable rule**: Always run Next.js CLI commands (`npm run dev`, `npm run build`, `npx next`) from the directory containing `package.json` and `next.config.ts`. In a multi-project workspace, that is the subdirectory, not the workspace root. Verify with `Get-Location` before running.  
 **Action to encode**: Add CWD check to quick-start instructions; update dev server troubleshooting entry to include "verify cwd matches package.json location" as the first diagnostic step
+
+## 2026-03-31 — Page Title Template Duplication
+**Phase/Context**: Phase 5 — Playwright smoke tests found duplicate branding in page titles  
+**What worked**: Playwright `page.title` check immediately caught the bug ("/resume" showed "Resume | Patrick Beasley | Patrick Beasley")  
+**What failed**: Phase 3 page files set `title: "Resume | Patrick Beasley"` while the root layout already applies template `"%s | Patrick Beasley"` — resulting in double append  
+**Root cause**: When using Next.js metadata template (`template: "%s | suffix"`), page-level titles must NOT include the suffix — the template appends it automatically  
+**Reusable rule**: When a root layout defines `metadata.title.template`, all page-level `export const metadata` titles must be the bare page name only (e.g., `"Resume"` not `"Resume | Patrick Beasley"`). The template handles the suffix.  
+**Action to encode**: Add to `frontend.instructions.md`: page title must not repeat suffix already defined in layout template
+
+## 2026-03-31 — Contact Form Was Only Logging, Not Persisting
+**Phase/Context**: Phase 5 — Security and code review revealed incomplete implementation  
+**What worked**: Code review of `app/api/contact/route.ts` caught the TODO comment: "Insert into database via Supabase" with only a `console.log()` in place  
+**What failed**: Phase 4 contact form was submitted with just a placeholder — submissions were never saved to the database  
+**Root cause**: Implementation was stubbed out with a TODO and placeholder log; the actual Supabase insert was never added  
+**Reusable rule**: When reviewing a TODO comment in production code paths, treat it as a bug — never ship with "TODO: implement" in a user-facing API route. Verify each API route actually persists data if persistence is its purpose.  
+**Action to encode**: Add to code-review checklist: scan for TODO comments in API routes before closing any phase

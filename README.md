@@ -44,7 +44,7 @@ See `.env.example` for all required variables. Never commit `.env.local`.
 | Phase 2 | Data model + auth foundation | ✅ Done |
 | Phase 3 | Core site features | ✅ Done* |
 | Phase 4 | Admin + file upload/download | ✅ Done |
-| Phase 5 | Hardening + delivery | 🔲 Pending |
+| Phase 5 | Hardening + delivery | ✅ Done |
 
 *Phase 3: All public pages (About, Resume, Projects, Blog, Contact, Privacy) built with SEO metadata. Remaining: "Verify DNS OAuth ownership" (scope pending clarification).
 
