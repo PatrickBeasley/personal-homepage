@@ -1,5 +1,12 @@
 create extension if not exists pgcrypto;
 
+create table if not exists public.admin_users (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid unique references auth.users (id) on delete set null,
+  email text not null unique,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create or replace function public.is_admin()
 returns boolean
 language sql
@@ -13,13 +20,6 @@ as $$
     where lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
   );
 $$;
-
-create table if not exists public.admin_users (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid unique references auth.users (id) on delete set null,
-  email text not null unique,
-  created_at timestamptz not null default timezone('utc', now())
-);
 
 create table if not exists public.site_profile (
   id uuid primary key default gen_random_uuid(),
