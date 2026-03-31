@@ -36,6 +36,12 @@ description: Use when initializing a new project module or service from scratch 
 - [ ] Verify `.env.local` is git-ignored
 - [ ] Verify `.env.example` is committed even if the repo ignores `.env*`
 
+### Stage 3.5 — Auth Provider Wiring
+- [ ] Configure Google OAuth client in Google Cloud with Supabase callback URI (`https://<project-ref>.supabase.co/auth/v1/callback`)
+- [ ] Enable Google provider in Supabase Auth and save client ID/secret
+- [ ] Verify runtime provider status with `/auth/v1/settings` shows `external.google = true`
+- [ ] Run one full login flow through app callback route (`/auth/login` -> `/auth/callback`)
+
 ### Stage 4 — AI Docs
 - [ ] Create all `.github/` AI markdown files with starter outlines
 - [ ] Verify frontmatter is valid YAML
@@ -62,6 +68,7 @@ description: Use when initializing a new project module or service from scratch 
 - [ ] `npm run build` passes
 - [ ] No secrets in git history (`git log --all -p | Select-String "ghp_|sk_|secret"`)
 - [ ] Vercel auto-deploy triggers on push to main
+- [ ] Supabase migration dry run reports expected SQL before apply and "up to date" after apply
 
 ## Failure Handling
 - If `create-next-app` fails midway, delete the directory and retry with `--yes` flag

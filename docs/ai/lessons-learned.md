@@ -34,3 +34,19 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: Default scaffold ignore rules were broader than needed, and git credential behavior was not fully consistent across terminals  
 **Reusable rule**: If a token is ever embedded in a remote URL to unblock automation, reset the remote to a clean URL immediately after push; also verify `.env.example` is force-added or explicitly unignored when the repo ignores `.env*`  
 **Action to encode**: Update bootstrap guidance and repo instructions to check `.env.example` staging and remote URL cleanup
+
+## 2026-03-30 — Migration Apply Order Matters
+**Phase/Context**: Phase 1 schema apply against remote Supabase database  
+**What worked**: Applying migrations with `supabase db push --db-url ... --include-all` and validating with a dry run before and after apply  
+**What failed**: Initial migration run failed because `public.is_admin()` referenced `public.admin_users` before the table existed  
+**Root cause**: SQL function dependency order in migration file did not match Postgres validation behavior  
+**Reusable rule**: In initial schema migrations, create dependency tables before creating functions or policies that reference them  
+**Action to encode**: Keep dependency-order checks in migration review prompt and run dry-run before first apply
+
+## 2026-03-30 — OAuth Provider Save Is Not Enough Without Runtime Verification
+**Phase/Context**: Phase 2 Google OAuth provider setup and callback validation  
+**What worked**: Verifying provider status through `/auth/v1/settings` with anon API key and then running end-to-end sign-in via `/auth/login`  
+**What failed**: Assuming provider config was active before checking runtime settings led to a false-complete state  
+**Root cause**: Dashboard save state was not validated against the live auth service configuration  
+**Reusable rule**: After provider setup, always verify `external.google=true` from auth settings and perform one full login callback test before closing auth tasks  
+**Action to encode**: Add provider-status and callback test checklist to bootstrap skill

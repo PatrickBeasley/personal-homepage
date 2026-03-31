@@ -85,3 +85,23 @@ This file tracks significant decisions made about AI workflows, tooling, and con
 **Alternatives considered**: Blocking all setup until ownership is manually re-confirmed (slows progress without changing technical design).  
 **Consequences**: Build work can continue, but the Phase 0 operational verification issue stays open until DNS and OAuth access are confirmed.  
 **Follow-up tasks**: Confirm registrar/DNS access and Google Cloud project ownership before Vercel custom domain and OAuth callback setup.
+
+---
+
+## 2026-03-30 — Phase 1 Platform Bootstrap Completion Baseline
+**Status**: Active  
+**Context**: Phase 1 targeted platform readiness: Vercel deployment, Supabase project creation, base schema migration, and env wiring for local + deployed environments.  
+**Decision**: Treat Phase 1 implementation as complete once the repo is deployed to Vercel, Supabase project is created, initial migration `202603300001_initial_schema.sql` is applied, and required environment values are available in local runtime and deployment settings.  
+**Alternatives considered**: Keeping Phase 1 open until custom domain cutover (mixes platform bootstrap with DNS operations tracked separately).  
+**Consequences**: Remaining domain verification work can be tracked independently while Phase 2 auth and app feature work proceeds.  
+**Follow-up tasks**: Keep DNS/OAuth ownership verification open as a separate operational gate before production launch.
+
+---
+
+## 2026-03-30 — Phase 2 Auth Foundation Completion Baseline
+**Status**: Active  
+**Context**: Phase 2 required server-side OAuth flow support, secure redirect handling, and admin access bootstrapping for RLS-based authorization.  
+**Decision**: Mark auth foundation complete when Google provider is enabled in Supabase, callback/login routes are implemented in app code, sign-in is validated successfully, and the admin email is inserted into `public.admin_users`.  
+**Alternatives considered**: Delaying completion until full admin dashboard exists (moves goalposts into Phase 4 scope).  
+**Consequences**: Auth is ready for protected routes and admin features; dashboard and content workflows can proceed without revisiting provider bootstrap.  
+**Follow-up tasks**: Add protected admin route guards and session-aware UI as Phase 4 implementation tasks.
