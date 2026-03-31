@@ -56,10 +56,23 @@ description: Use when performing a security review pass on auth, permissions, fi
 
 ## Verification Steps
 1. Run `npm run build` — no type errors
-2. Test unauthenticated access to each protected route — expect 401/403
-3. Test upload with disallowed extension — expect rejection with clear error
-4. Test upload exceeding 10MB — expect rejection
-5. Confirm signed download URL expires after TTL
+2. Run `npm run lint` — no errors or warnings
+3. Test unauthenticated access to each protected route — expect 401/403
+4. Test upload with disallowed extension — expect rejection with clear error
+5. Test upload exceeding 10MB — expect rejection
+6. Confirm signed download URL expires after TTL
+7. Verify security headers are present using browser DevTools or `curl -I`
+
+## Implemented Security Headers (next.config.ts)
+The following headers are configured in `next.config.ts` on all routes:
+- `Content-Security-Policy`: script-src self+unsafe-inline; style-src self+unsafe-inline; connect-src self+Supabase; font-src self+data; img-src self+data+blob; frame-ancestors none
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy`: deny camera, microphone, geolocation
+- `Strict-Transport-Security`: max-age=63072000; includeSubDomains; preload
+
+> Note: `unsafe-eval` is intentionally excluded from CSP. React dev mode logs a console warning about eval() — this is expected in development only and harmless in production.
 
 ## Lessons Learned Integration
 After each security pass, update `docs/ai/lessons-learned.md` with any new patterns or gaps found.

@@ -34,3 +34,17 @@ applyTo: "app/**,components/**,styles/**"
 - Follow the established color palette and spacing scale — do not introduce one-off values.
 - Dark mode support is desirable but not required at launch. Use Tailwind's `dark:` variant if added.
 - Keep component files focused: one component per file, co-located styles if needed.
+
+## Next.js Metadata Rules
+- When a root layout defines `metadata.title.template` (e.g., `"%s | Patrick Beasley"`), page-level `export const metadata` titles must contain only the bare page name (e.g., `"Resume"` not `"Resume | Patrick Beasley"`). The template appends the suffix automatically — duplicating it in the page title causes "Resume | Patrick Beasley | Patrick Beasley" in the browser tab.
+- Always verify rendered `<title>` during Playwright smoke tests.
+
+## Script and Module File Rules
+- `.mjs` files are plain JavaScript ES modules — they do NOT support TypeScript syntax (no `: Type` annotations, no interface/type declarations).
+- If type safety is needed in a script, rename it to `.ts` and run with `ts-node` or compile first.
+- Use JSDoc `@param` and `@returns` comments for type hints in `.mjs` files.
+- Run scripts with `node script.mjs`, not `npx ts-node script.mjs`.
+
+## Playwright Validation
+- After creating or modifying any page, navigate to it in Playwright and verify: correct `page.title()`, no console errors, page content renders, navigation links work.
+- Check for duplicate page titles (see Metadata Rules above) as part of every smoke test pass.
