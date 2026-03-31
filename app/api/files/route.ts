@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const { supabase } = authResult;
 
   try {
-    let query = supabase
+    const query = supabase
       .from("files_metadata")
       .select("id, file_name, file_size_bytes, visibility, created_at, description")
       .order("created_at", { ascending: false });

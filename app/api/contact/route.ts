@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+
 /**
  * POST /api/contact
  * Public endpoint for contact form submissions.
@@ -67,14 +69,26 @@ export async function POST(request: NextRequest) {
     const sanitize = (str: string) =>
       str.replace(/[<>]/g, "").trim().substring(0, 5000);
 
-    // TODO: Insert into database via Supabase
-    // For now, just acknowledge the submission
-    console.log("Contact submission:", {
+    const sanitized = {
       name: sanitize(name),
       email: sanitize(email),
       subject: subject ? sanitize(subject) : null,
       message: sanitize(message),
-    });
+    };
+
+    // Insert into Supabase — RLS "anyone can submit contact form" policy allows this
+    const supabase = await createServerSupabaseClient();
+    const { error: dbError } = await supabase
+      .from("contact_submissions")
+      .insert(sanitized);
+
+    if (dbError) {
+      console.error("Contact submission DB error:", dbError.message);
+      return NextResponse.json(
+        { error: "Failed to submit. Please try again." },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
       { message: "Thank you for your message. We'll review it shortly." },

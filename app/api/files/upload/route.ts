@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 import { requireAdminAuth } from "@/lib/auth/admin-guard";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 // Allowed file extensions and MIME types
 const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".sql", ".py"];

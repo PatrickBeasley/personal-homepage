@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Resume | Patrick Beasley",
+  title: "Resume",
   description: "Full-stack engineer with expertise in Next.js, cloud infrastructure, and database design.",
 };
 

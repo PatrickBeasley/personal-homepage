@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Projects | Patrick Beasley",
+  title: "Projects",
   description: "Portfolio of web development projects including full-stack applications, open-source contributions, and side projects.",
 };
 

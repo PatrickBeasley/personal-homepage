@@ -74,3 +74,11 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: File was written with TypeScript syntax despite being a `.mjs` (plain JavaScript) file; also included documentation saying to run with `npx ts-node` when the file is ES module JavaScript  
 **Reusable rule**: .mjs files are plain JavaScript ES modules and do NOT support TypeScript syntax. If type annotations are needed, either: (a) rename to `.ts` and run with TypeScript compiler/loader, or (b) keep as `.mjs` and use JSDoc comments for type hints instead of TypeScript annotations. Always verify execution instruction matches file type (`node` for .mjs, `ts-node` for .ts).  
 **Action to encode**: Add to `frontend.instructions.md` or create a `.mjs` file guide clarifying the distinction between .ts (TypeScript) and .mjs (plain ES module) files
+
+## 2026-03-31 — Dev Server "Couldn't Find App Directory" Was a Wrong Working Directory
+**Phase/Context**: Phase 5 — Attempting to start dev server for Playwright smoke tests  
+**What worked**: Running `npx next dev` from `C:\Projects\personal-homepage` — server started in 443ms  
+**What failed**: All prior attempts ran `npm run dev` / `npx next dev` from `C:\Projects` (workspace root), not the Next.js project subdirectory  
+**Root cause**: VS Code workspace is rooted at `C:\Projects` but the Next.js app lives at `C:\Projects\personal-homepage`; terminal `cwd` defaulted to the workspace root, not the project subfolder  
+**Reusable rule**: Always run Next.js CLI commands (`npm run dev`, `npm run build`, `npx next`) from the directory containing `package.json` and `next.config.ts`. In a multi-project workspace, that is the subdirectory, not the workspace root. Verify with `Get-Location` before running.  
+**Action to encode**: Add CWD check to quick-start instructions; update dev server troubleshooting entry to include "verify cwd matches package.json location" as the first diagnostic step

@@ -23,7 +23,7 @@ interface ContactSubmission {
 
 type Tab = "files" | "contacts";
 
-export default function AdminDashboardClient({ userEmail }: { userEmail: string }) {
+export default function AdminDashboardClient({ userEmail: _userEmail }: { userEmail: string | undefined }) {
   const [activeTab, setActiveTab] = useState<Tab>("files");
   const [files, setFiles] = useState<FileMetadata[]>([]);
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);

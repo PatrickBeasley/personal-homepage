@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog | Patrick Beasley",
+  title: "Blog",
   description: "Articles about web development, full-stack engineering, system design, and cloud infrastructure.",
 };
 

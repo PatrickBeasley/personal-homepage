@@ -8,7 +8,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
  * Verifies user is authenticated and has admin email.
  * Returns { user, supabase } on success or NextResponse (401/403) on failure.
  */
-export async function requireAdminAuth(request: NextRequest) {
+export async function requireAdminAuth(_request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
 
