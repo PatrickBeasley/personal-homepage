@@ -36,6 +36,37 @@ This workspace is the personal homepage for patrickbeasley.com, built with Next.
 - Run `npm run lint` and `npm run build` after any non-trivial change.
 - For schema changes, include migration SQL and RLS policy updates.
 - For auth changes, verify both authenticated and unauthenticated paths.
+- For web page changes, use Playwright MCP automation to test rendering, navigation, and console errors.
+
+## Browser Testing with Playwright MCP
+- **Enabled**: Playwright MCP is the standard tool for web page validation during development.
+- **When to use**: After creating or modifying any page, route, or layout component.
+- **Quick reference**:
+  ```
+  // Start browser
+  action=start, browser=chrome, headless=true
+  
+  // Navigate and test
+  action=navigate, url=http://localhost:3000/resume
+  
+  // Check console messages
+  action=console_messages, level=error
+  
+  // Take screenshot (if problems found)
+  action=screenshot
+  
+  // Close when done
+  action=close
+  ```
+- **Test steps**:
+  1. Start Playwright: `action=start, browser=chrome, headless=true`
+  2. Navigate to each modified page on localhost:3000 or deployed URL
+  3. Validate: page title, metadata tags (og:, twitter:), responsive design, navigation links
+  4. Check console for errors/warnings using `console_messages` action
+  5. Screenshot if validation reveals issues
+  6. Close browser when complete: `action=close`
+- **Pages to test**: Homepage, all public pages, auth routes, error pages
+- **Focus areas**: Hydration issues, broken links, missing metadata, dark mode support, layout shifts
 
 ## Output Formatting
 - Keep explanations brief. Lead with what changed and why, not a summary of what was read.
