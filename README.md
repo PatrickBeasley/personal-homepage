@@ -39,12 +39,14 @@ See `.env.example` for all required variables. Never commit `.env.local`.
 |-------|-------------|--------|
 | Action 0 | GitHub repo + tracking foundation | ✅ Done |
 | Action 1 | AI markdown scaffold files | ✅ Done |
-| Phase 0 | Readiness checklist decisions | 🔲 Not started |
-| Phase 1 | Platform bootstrap (Next.js, Vercel, Supabase) | 🔲 Not started |
-| Phase 2 | Data model + auth foundation | 🔲 Not started |
-| Phase 3 | Core site features | 🔲 Not started |
-| Phase 4 | Admin + file upload/download | 🔲 Not started |
-| Phase 5 | Hardening + delivery | 🔲 Not started |
+| Phase 0 | Readiness checklist decisions | ✅ Done |
+| Phase 1 | Platform bootstrap (Next.js, Vercel, Supabase) | ✅ Done |
+| Phase 2 | Data model + auth foundation | ✅ Done |
+| Phase 3 | Core site features | ✅ Done* |
+| Phase 4 | Admin + file upload/download | ✅ Done |
+| Phase 5 | Hardening + delivery | 🔲 Pending |
+
+*Phase 3: All public pages (About, Resume, Projects, Blog, Contact, Privacy) built with SEO metadata. Remaining: "Verify DNS OAuth ownership" (scope pending clarification).
 
 ---
 
