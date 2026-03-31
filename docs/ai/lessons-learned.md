@@ -98,3 +98,11 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: Implementation was stubbed out with a TODO and placeholder log; the actual Supabase insert was never added  
 **Reusable rule**: When reviewing a TODO comment in production code paths, treat it as a bug — never ship with "TODO: implement" in a user-facing API route. Verify each API route actually persists data if persistence is its purpose.  
 **Action to encode**: Add to code-review checklist: scan for TODO comments in API routes before closing any phase
+
+## 2026-03-31 — Planning Must Produce GitHub Issues for Execution Tracking
+**Phase/Context**: Phase 6 planning and reconciliation across multi-day implementation  
+**What worked**: Creating a parent issue plus scoped child implementation issues made progress and reconciliation clear across multiple sessions and commits  
+**What failed**: Planning artifacts can drift from execution when issue creation is deferred or skipped  
+**Root cause**: Work tracking depended on chat context and docs alone instead of an issue-first execution backbone  
+**Reusable rule**: For this repository, planning mode must always generate or update GitHub issues (parent + child tasks) before implementation begins, and keep project board membership/status in sync throughout delivery  
+**Action to encode**: Add to `copilot-instructions.md` planning behavior as a non-optional workflow rule

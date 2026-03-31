@@ -21,6 +21,8 @@ This workspace is the personal homepage for patrickbeasley.com, built with Next.
 
 ## Planning vs Implementation Behavior
 - When asked to plan: identify risks, list open decisions, and propose an approach before writing code.
+- Planning mode in this repository is issue-first: create or update GitHub issues for planned work (one parent tracking issue plus child implementation tasks) before starting code changes.
+- For work expected to span multiple days or sessions, ensure planned issues are added to the GitHub project board and keep item status aligned with actual progress.
 - When asked to implement: write the minimal diff needed, verify it, and report what was changed and tested.
 - When requirements are ambiguous: state the assumption, implement it, and flag it for review.
 
