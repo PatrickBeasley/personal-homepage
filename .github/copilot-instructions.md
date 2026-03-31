@@ -73,6 +73,12 @@ This workspace is the personal homepage for patrickbeasley.com, built with Next.
 - Use inline code for file paths and symbol names.
 - Provide a bulleted list of follow-up tasks if any dependencies remain unresolved.
 
+## Knowledge Capture and Documentation
+- **Automatic documentation**: Whenever a bug, issue, or problem is identified and fixed, automatically document the lesson in `docs/ai/lessons-learned.md` with root cause and reusable rule.
+- **Promotion to instructions**: If a lesson is actionable and should prevent future mistakes, also update the relevant `.instructions.md` file (e.g., `backend.instructions.md`, `frontend.instructions.md`).
+- **When to document**: Immediately after fixing issues, not only when explicitly prompted. Problems that have a root cause worth encoding should be captured.
+- **Update decision-records**: If a decision is made during implementation that affects future work, document it in `docs/ai/decision-records.md`.
+
 ## Escalation Rules
 - If a change would affect the production database schema, pause and confirm before executing.
 - If a change modifies auth or RLS policies, flag it explicitly for review before merging.
