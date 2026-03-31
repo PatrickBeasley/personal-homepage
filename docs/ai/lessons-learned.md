@@ -66,3 +66,11 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: Crypto module doesn't export UUID v4 — should use `crypto.randomUUID()` instead  
 **Reusable rule**: For file uploads, always validate extension AND MIME type server-side; separate storage operations from metadata tracking so cleanup is consistent if one fails; use `crypto.randomUUID()` for Node.js 16+, or import from `uuid` package for compatibility  
 **Action to encode**: Update `backend.instructions.md` with file upload validation pattern and middleware example
+
+## 2026-03-31 — .mjs Files Cannot Use TypeScript Type Annotations
+**Phase/Context**: Post-Phase 4 — Verification of script files before use  
+**What worked**: Syntax checking with `node --check` identified the invalid script syntax  
+**What failed**: `scripts/test-pages.mjs` contained TypeScript type annotations (`: Browser`, `: Page`, `: string[]`) which are not valid in plain JavaScript ES modules  
+**Root cause**: File was written with TypeScript syntax despite being a `.mjs` (plain JavaScript) file; also included documentation saying to run with `npx ts-node` when the file is ES module JavaScript  
+**Reusable rule**: .mjs files are plain JavaScript ES modules and do NOT support TypeScript syntax. If type annotations are needed, either: (a) rename to `.ts` and run with TypeScript compiler/loader, or (b) keep as `.mjs` and use JSDoc comments for type hints instead of TypeScript annotations. Always verify execution instruction matches file type (`node` for .mjs, `ts-node` for .ts).  
+**Action to encode**: Add to `frontend.instructions.md` or create a `.mjs` file guide clarifying the distinction between .ts (TypeScript) and .mjs (plain ES module) files
