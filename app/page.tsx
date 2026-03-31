@@ -1,23 +1,11 @@
 import Link from "next/link";
 
+import SiteNav from "@/components/site-nav";
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-black">
-      {/* Navigation */}
-      <nav className="border-b border-zinc-200 dark:border-zinc-800 sticky top-0 bg-white/95 dark:bg-black/95 backdrop-blur">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="text-lg font-semibold text-black dark:text-white">
-            Patrick Beasley
-          </Link>
-          <ul className="flex gap-8 text-sm font-medium">
-            <li><Link href="#about" className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white">About</Link></li>
-            <li><Link href="/resume" className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white">Resume</Link></li>
-            <li><Link href="/projects" className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white">Projects</Link></li>
-            <li><Link href="/blog" className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white">Blog</Link></li>
-            <li><Link href="#contact" className="text-zinc-600 dark:text-zinc-400 hover:text-black dark:hover:text-white">Contact</Link></li>
-          </ul>
-        </div>
-      </nav>
+      <SiteNav currentPath="/" />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
         {/* Hero Section */}

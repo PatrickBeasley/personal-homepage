@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { isAdminEmail } from "@/lib/auth/admin";
 import { getRequestOrigin, normalizeNextPath } from "@/lib/auth/redirects";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
@@ -23,6 +24,14 @@ export async function GET(request: NextRequest) {
     failureUrl.searchParams.set("auth_error", "oauth_callback_failed");
 
     return NextResponse.redirect(failureUrl);
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (isAdminEmail(user?.email) && next === "/") {
+    return NextResponse.redirect(new URL("/admin", origin));
   }
 
   return NextResponse.redirect(new URL(next, origin));

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { isAdminEmail } from "@/lib/auth/admin";
+import { getUserContext } from "@/lib/auth/user-context";
 import AdminDashboardClient from "./admin-dashboard-client";
 
 export const metadata: Metadata = {
@@ -11,11 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPage() {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, isAdmin } = await getUserContext();
 
   // Redirect to login if not authenticated
   if (!user) {
@@ -23,7 +18,7 @@ export default async function AdminPage() {
   }
 
   // Redirect if not admin
-  if (!isAdminEmail(user.email)) {
+  if (!isAdmin) {
     redirect("/");
   }
 
@@ -32,7 +27,7 @@ export default async function AdminPage() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage files and contact submissions</p>
+          <p className="text-gray-600 mt-2">Manage blog posts, files, and contact submissions</p>
         </div>
 
         <AdminDashboardClient userEmail={user.email} />
