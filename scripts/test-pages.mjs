@@ -4,10 +4,10 @@
  * Playwright Testing Workflow for Phase 3 Pages
  * 
  * This demonstrates how to use Playwright MCP to validate web pages during development.
- * Run with: npx ts-node scripts/test-pages.ts
+ * Run with: node scripts/test-pages.mjs
  */
 
-import { chromium, Browser, Page } from "playwright";
+import { chromium } from "playwright";
 
 const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 const PAGES_TO_TEST = [
@@ -42,7 +42,7 @@ const PAGES_TO_TEST = [
 ];
 
 async function testPages() {
-  let browser: Browser;
+  let browser;
 
   try {
     console.log("🚀 Starting Playwright browser...");
@@ -50,7 +50,7 @@ async function testPages() {
 
     for (const page of PAGES_TO_TEST) {
       console.log(`\n📄 Testing: ${page.path}`);
-      const browserPage: Page = await browser.newPage();
+      const browserPage = await browser.newPage();
 
       try {
         // Navigate to page
@@ -66,7 +66,7 @@ async function testPages() {
         }
 
         // Check for console errors
-        const errors: string[] = [];
+        const errors = [];
         browserPage.on("console", (msg) => {
           if (msg.type() === "error") {
             errors.push(msg.text());
