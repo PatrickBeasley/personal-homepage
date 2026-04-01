@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getUserContext } from "@/lib/auth/user-context";
 
 type SiteNavProps = {
-  currentPath: "/" | "/resume" | "/projects" | "/blog" | "/privacy";
+  currentPath: "/" | "/projects" | "/blog" | "/privacy";
 };
 
 function getLinkClass(isActive: boolean) {
@@ -28,11 +28,6 @@ export default async function SiteNav({ currentPath }: SiteNavProps) {
           <li>
             <Link href="/#about" className={getLinkClass(false)}>
               About
-            </Link>
-          </li>
-          <li>
-            <Link href="/resume" className={getLinkClass(currentPath === "/resume")}>
-              Resume
             </Link>
           </li>
           <li>

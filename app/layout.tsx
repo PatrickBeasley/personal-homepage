@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import HashScrollHandler from "@/components/hash-scroll-handler";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | Patrick Beasley",
   },
   description:
-    "Full-stack engineer focused on building clean, performant web applications. Explore my projects, resume, and get in touch.",
+    "Full-stack engineer focused on building clean, performant web applications. Explore my projects, blog, and get in touch.",
   keywords: [
     "full-stack engineer",
     "next.js",
@@ -40,7 +41,7 @@ export const metadata: Metadata = {
     siteName: "Patrick Beasley",
     title: "Patrick Beasley | Full-Stack Engineer",
     description:
-      "Full-stack engineer focused on building clean, performant web applications. Explore my projects, resume, and get in touch.",
+      "Full-stack engineer focused on building clean, performant web applications. Explore my projects, blog, and get in touch.",
     images: [
       {
         url: "/og-image.png",
@@ -84,7 +85,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <HashScrollHandler />
+        {children}
+      </body>
     </html>
   );
 }

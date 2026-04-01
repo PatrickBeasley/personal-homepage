@@ -27,7 +27,7 @@ export default async function AdminPage() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">Manage blog posts, files, and contact submissions</p>
+          <p className="text-gray-600 mt-2">Upload and manage files, blog posts, and contact submissions</p>
         </div>
 
         <AdminDashboardClient userEmail={user.email} />

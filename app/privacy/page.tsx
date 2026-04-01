@@ -72,7 +72,7 @@ export default function PrivacyPage() {
 
           <h2 className="text-2xl font-bold text-black dark:text-white mt-8 mb-4">4. File Downloads</h2>
           <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4">
-            Files available for download (resume, portfolios, etc.) are public unless otherwise marked as private.
+            Files available for download (portfolios, documents, etc.) are public unless otherwise marked as private.
             Downloaded files are your responsibility to handle securely. Do not redistribute proprietary or confidential materials.
           </p>
 

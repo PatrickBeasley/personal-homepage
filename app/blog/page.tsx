@@ -1,6 +1,8 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import SiteNav from "@/components/site-nav";
+import { getUserContext } from "@/lib/auth/user-context";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -18,6 +20,7 @@ interface BlogPostSummary {
 }
 
 export default async function BlogPage() {
+  const { isAdmin } = await getUserContext();
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase
     .from("blog_posts")
@@ -38,6 +41,12 @@ export default async function BlogPage() {
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-16">
         <h1 className="text-4xl font-bold text-black dark:text-white mb-12">Blog</h1>
+
+        {isAdmin && (
+          <div className="mb-8 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
+            You are signed in as admin. <Link href="/admin" className="underline font-medium">Manage posts and drafts</Link>.
+          </div>
+        )}
 
         <div className="space-y-8">
           {posts.length === 0 && (

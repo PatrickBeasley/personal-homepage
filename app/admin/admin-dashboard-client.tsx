@@ -51,7 +51,7 @@ const initialBlogForm: BlogPostForm = {
 };
 
 export default function AdminDashboardClient({ userEmail: _userEmail }: { userEmail: string | undefined }) {
-  const [activeTab, setActiveTab] = useState<Tab>("blog");
+  const [activeTab, setActiveTab] = useState<Tab>("files");
   const [files, setFiles] = useState<FileMetadata[]>([]);
   const [contacts, setContacts] = useState<ContactSubmission[]>([]);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
@@ -306,16 +306,6 @@ export default function AdminDashboardClient({ userEmail: _userEmail }: { userEm
       {/* Tabs */}
       <div className="flex gap-4 border-b border-gray-200">
         <button
-          onClick={() => setActiveTab("blog")}
-          className={`px-4 py-2 font-medium border-b-2 ${
-            activeTab === "blog"
-              ? "border-blue-500 text-blue-600"
-              : "border-transparent text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Blog Posts
-        </button>
-        <button
           onClick={() => setActiveTab("files")}
           className={`px-4 py-2 font-medium border-b-2 ${
             activeTab === "files"
@@ -324,6 +314,16 @@ export default function AdminDashboardClient({ userEmail: _userEmail }: { userEm
           }`}
         >
           Files
+        </button>
+        <button
+          onClick={() => setActiveTab("blog")}
+          className={`px-4 py-2 font-medium border-b-2 ${
+            activeTab === "blog"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          Blog Posts
         </button>
         <button
           onClick={() => setActiveTab("contacts")}
@@ -374,6 +374,7 @@ export default function AdminDashboardClient({ userEmail: _userEmail }: { userEm
                   value={blogForm.excerpt}
                   onChange={(e) => setBlogForm((prev) => ({ ...prev, excerpt: e.target.value }))}
                   rows={2}
+                  spellCheck
                   className="block w-full border border-gray-300 rounded-lg p-2"
                 />
               </div>
@@ -384,9 +385,13 @@ export default function AdminDashboardClient({ userEmail: _userEmail }: { userEm
                   value={blogForm.content_md}
                   onChange={(e) => setBlogForm((prev) => ({ ...prev, content_md: e.target.value }))}
                   rows={10}
+                  spellCheck
                   className="block w-full border border-gray-300 rounded-lg p-2"
                   required
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Tip: Your browser spell check is enabled while editing.
+                </p>
               </div>
 
               <label className="inline-flex items-center gap-2 text-sm text-gray-700">
@@ -540,6 +545,9 @@ export default function AdminDashboardClient({ userEmail: _userEmail }: { userEm
           {/* Files List */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Files</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Upload files, control visibility, and remove old assets from one place.
+            </p>
 
             {files.length === 0 ? (
               <p className="text-gray-500">No files uploaded yet</p>
@@ -577,6 +585,22 @@ export default function AdminDashboardClient({ userEmail: _userEmail }: { userEm
                           {new Date(file.created_at).toLocaleDateString()}
                         </td>
                         <td className="py-3 space-x-2">
+                          <button
+                            onClick={async () => {
+                              const response = await fetch(`/api/files/${file.id}/download`);
+                              const data = await response.json();
+
+                              if (!response.ok || !data.signedUrl) {
+                                alert(data.error || "Failed to create download link");
+                                return;
+                              }
+
+                              window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+                            }}
+                            className="text-emerald-700 hover:text-emerald-900 text-xs font-medium"
+                          >
+                            Download
+                          </button>
                           <button
                             onClick={() => toggleFileVisibility(file)}
                             className="text-blue-600 hover:text-blue-800 text-xs font-medium"

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import ContactForm from "@/components/contact-form";
 import SiteNav from "@/components/site-nav";
 
 export default function Home() {
@@ -25,10 +26,10 @@ export default function Home() {
               Get in touch
             </a>
             <Link
-              href="/resume"
+              href="/projects"
               className="inline-block px-6 py-3 border border-zinc-300 dark:border-zinc-700 text-black dark:text-white rounded-lg font-medium hover:bg-zinc-50 dark:hover:bg-zinc-900 transition"
             >
-              View resume
+              View projects
             </Link>
           </div>
         </section>
@@ -63,12 +64,7 @@ export default function Home() {
           <p className="text-zinc-600 dark:text-zinc-400 mb-8 max-w-2xl">
             Have a project in mind or want to collaborate? Send me a message and I&rsquo;ll get back to you as soon as possible.
           </p>
-          <Link
-            href="#"
-            className="inline-block px-6 py-3 bg-black dark:bg-white text-white dark:text-black rounded-lg font-medium hover:opacity-90 transition"
-          >
-            Contact form
-          </Link>
+          <ContactForm />
         </section>
       </main>
 
