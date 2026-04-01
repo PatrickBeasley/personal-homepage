@@ -106,3 +106,11 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: Work tracking depended on chat context and docs alone instead of an issue-first execution backbone  
 **Reusable rule**: For this repository, planning mode must always generate or update GitHub issues (parent + child tasks) before implementation begins, and keep project board membership/status in sync throughout delivery  
 **Action to encode**: Add to `copilot-instructions.md` planning behavior as a non-optional workflow rule
+
+## 2026-04-01 — Homepage UX Pass: Build-Safe Client Helpers and Issue Hygiene
+**Phase/Context**: Phase 6 implementation batch for contact form, auth/nav UX, anchor navigation, admin discoverability, and resume removal  
+**What worked**: Reusing existing backend/admin APIs and focusing on UI wiring delivered multiple fixes quickly; browser validation confirmed cross-page hash scrolling and contact submit success; issue-per-scope tracking kept execution organized  
+**What failed**: Initial hash-scroll helper used `useSearchParams()` and caused a Next.js build-time suspense/prerender error; one GitHub issue body was corrupted by shell escaping while creating long markdown content  
+**Root cause**: (1) Global client helper in root layout used a hook that triggers CSR bailout requirements in static generation paths; (2) long multiline issue bodies were passed through an unsafe shell quoting path  
+**Reusable rule**: For client utilities mounted in `app/layout.tsx`, prefer minimal hooks (`usePathname`, event listeners) and avoid `useSearchParams` unless wrapped intentionally; for `gh issue create` with long content, use safer body editing patterns (`gh issue edit --body` with a here-string)  
+**Action to encode**: Add "layout-mounted client helper hook safety" to Next.js checklist and add a "safe gh issue body" snippet to planning workflow notes
