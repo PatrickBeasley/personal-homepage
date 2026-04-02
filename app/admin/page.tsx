@@ -14,7 +14,7 @@ export default async function AdminPage() {
 
   // Redirect to login if not authenticated
   if (!user) {
-    redirect("/auth/login");
+    redirect("/auth/login?next=%2Fadmin");
   }
 
   // Redirect if not admin
