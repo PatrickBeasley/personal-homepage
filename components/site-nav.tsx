@@ -15,7 +15,7 @@ function getLinkClass(isActive: boolean) {
 }
 
 export default async function SiteNav({ currentPath }: SiteNavProps) {
-  const { user, isAdmin } = await getUserContext();
+  const { user } = await getUserContext();
   const nextPath = encodeURIComponent(currentPath);
 
   return (
@@ -45,6 +45,11 @@ export default async function SiteNav({ currentPath }: SiteNavProps) {
               Contact
             </Link>
           </li>
+          <li>
+            <Link href="/admin" className="text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white">
+              Admin
+            </Link>
+          </li>
           {!user && (
             <li>
               <Link
@@ -52,13 +57,6 @@ export default async function SiteNav({ currentPath }: SiteNavProps) {
                 className="text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white"
               >
                 Login
-              </Link>
-            </li>
-          )}
-          {user && isAdmin && (
-            <li>
-              <Link href="/admin" className="text-zinc-700 dark:text-zinc-300 hover:text-black dark:hover:text-white">
-                Admin
               </Link>
             </li>
           )}
