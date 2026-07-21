@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import HashScrollHandler from "@/components/hash-scroll-handler";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const ibmPlexSans = IBM_Plex_Sans({
+  variable: "--font-ibm-plex-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +29,7 @@ export const metadata: Metadata = {
     template: "%s | Patrick Beasley",
   },
   description:
-    "Full-stack engineer focused on building clean, performant web applications. Explore my projects, blog, and get in touch.",
+    "Full-stack engineer focused on building clean, performant web applications.",
   keywords: [
     "full-stack engineer",
     "next.js",
@@ -41,7 +48,7 @@ export const metadata: Metadata = {
     siteName: "Patrick Beasley",
     title: "Patrick Beasley | Full-Stack Engineer",
     description:
-      "Full-stack engineer focused on building clean, performant web applications. Explore my projects, blog, and get in touch.",
+      "Full-stack engineer focused on building clean, performant web applications.",
     images: [
       {
         url: "/og-image.png",
@@ -75,6 +82,10 @@ export const metadata: Metadata = {
   },
 };
 
+// Runs before hydration so there is no theme flash. Dark is the default:
+// any missing/unrecognized localStorage value resolves to "dark".
+const THEME_INIT_SCRIPT = `(function(){try{var t=window.localStorage.getItem('theme');document.documentElement.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -83,9 +94,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-bg text-text">
         <HashScrollHandler />
         {children}
       </body>

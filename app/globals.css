@@ -1,26 +1,158 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens ported from design/patrick-beasley.dc.html (#pbapp block).
+ * Dark values live on :root (dark is the default theme); light overrides
+ * apply under [data-theme="light"] (set on <html> by the pre-hydration
+ * script in app/layout.tsx). The work/home accent swap is driven by
+ * [data-ctx="home"] — the default (no data-ctx, as on the public site) is
+ * the "work" accent, matching the design's #pbapp default. The dashboard
+ * (later phase) sets data-ctx to flip between workspaces.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0c0e13;
+  --surface: #14171e;
+  --surface-2: #1b1f28;
+  --elevated: #181c24;
+  --text: #f2f4f8;
+  --text-2: #c3c8d2;
+  --muted: #79808e;
+  --border: #232833;
+  --border-2: #2d333f;
+
+  --accent-work: #3d6bff;
+  --accent-home: #12b886;
+  --accent: var(--accent-work);
+  --accent-2: #7d9bff;
+  --accent-soft: rgba(61, 107, 255, 0.16);
+
+  --pb-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -14px rgba(0, 0, 0, 0.7);
+  --pb-shadow-lg: 0 30px 70px -24px rgba(0, 0, 0, 0.8);
+}
+
+[data-theme="light"] {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --elevated: #ffffff;
+  --text: #12141a;
+  --text-2: #3a3f4b;
+  --muted: #767d8c;
+  --border: #e2e5ea;
+  --border-2: #d3d7de;
+
+  --accent-2: #5b82ff;
+  --accent-soft: rgba(61, 107, 255, 0.12);
+
+  --pb-shadow: 0 1px 2px rgba(18, 20, 26, 0.06), 0 8px 24px -12px rgba(18, 20, 26, 0.14);
+  --pb-shadow-lg: 0 24px 60px -20px rgba(18, 20, 26, 0.32);
+}
+
+[data-ctx="home"] {
+  --accent: var(--accent-home);
+  --accent-2: #2fd6a3;
+  --accent-soft: rgba(18, 184, 134, 0.14);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-elevated: var(--elevated);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-border-2: var(--border-2);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-soft: var(--accent-soft);
+
+  --font-heading: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-body: var(--font-ibm-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+
+  --shadow: var(--pb-shadow);
+  --shadow-lg: var(--pb-shadow-lg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+  transition: background 0.35s ease, color 0.35s ease;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--accent-2);
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 20px;
+  border: 3px solid var(--bg);
+}
+
+@keyframes pbUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pbSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pbPop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 860px) {
+  #pb-homelinks {
+    display: none !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .pb-pad {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
 }
