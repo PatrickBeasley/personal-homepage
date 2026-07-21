@@ -18,6 +18,11 @@ export type ApiErrorCode =
   | "INVALID_CTX"
   | "INVALID_URL"
   | "INVALID_CATEGORY"
+  // Oversize title/body are separated from INVALID_BODY on purpose: they are the
+  // one validation failure a client can act on itself (trim and retry), so the
+  // note editor needs to tell them apart from "you sent nonsense".
+  | "INVALID_TITLE"
+  | "INVALID_CONTENT"
   | "NOT_FOUND"
   | "CONFLICT"
   | "SERVER_ERROR";
@@ -31,6 +36,8 @@ export type DashboardSupabaseClient = Awaited<ReturnType<typeof createServerSupa
 
 export const LINK_COLUMNS =
   "id, ctx, category_id, title, url, description, sort_order, created_at, updated_at";
+
+export const NOTE_COLUMNS = "id, ctx, category_id, title, content_html, created_at, updated_at";
 
 export const CATEGORY_COLUMNS = "id, ctx, kind, name, sort_order";
 

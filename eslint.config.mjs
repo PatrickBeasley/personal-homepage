@@ -14,6 +14,11 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Read-only design source snapshot (generated code, not app code)
     "design/**",
+    // Agent-harness scratch space. `.claude/worktrees/*` are full git worktrees
+    // — duplicate checkouts of this repo — so without this ESLint lints every
+    // file twice and reports the design snapshot again under a path the
+    // `design/**` pattern above cannot match.
+    ".claude/**",
   ]),
   {
     rules: {

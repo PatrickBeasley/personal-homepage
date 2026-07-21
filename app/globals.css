@@ -111,6 +111,17 @@
     color: var(--accent-2);
   }
 
+  /*
+   * The note editor's placeholder, ported from the design. It has to be CSS
+   * rather than a React node: the editor is a contenteditable whose children
+   * belong to the browser, so nothing may be rendered inside it.
+   */
+  [contenteditable]:empty::before {
+    content: attr(data-ph);
+    color: var(--muted);
+    pointer-events: none;
+  }
+
   ::selection {
     background: var(--accent);
     color: #fff;

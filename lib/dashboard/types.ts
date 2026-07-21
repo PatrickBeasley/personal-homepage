@@ -38,3 +38,22 @@ export interface LinkItem {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * A note. Unlike a link, `title` may legitimately be empty — the editor creates
+ * the row before anything is typed into it, and the UI renders "Untitled" for
+ * the empty case. `content_html` always holds *sanitized* markup: the API runs
+ * `sanitizeNoteHtml` on every write, so nothing else in the app has to.
+ *
+ * `updated_at` is maintained by the `dashboard_notes_set_updated_at` trigger and
+ * must never be written from application code; the "Recent" sort reads it.
+ */
+export interface NoteItem {
+  id: string;
+  ctx: Ctx;
+  category_id: string;
+  title: string;
+  content_html: string;
+  created_at: string;
+  updated_at: string;
+}
