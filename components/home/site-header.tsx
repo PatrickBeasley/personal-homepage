@@ -10,7 +10,7 @@ type Theme = "dark" | "light";
 
 function SunIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <circle cx="12" cy="12" r="4" />
       <path d={SUN_PATH} />
     </svg>
@@ -19,7 +19,7 @@ function SunIcon() {
 
 function MoonIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d={MOON_PATH} />
     </svg>
   );
@@ -70,6 +70,12 @@ export default function SiteHeader() {
     window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }
 
+  // The icon shows the theme you would switch *to*, so the accessible name
+  // names that action. Deliberately no aria-pressed: ARIA requires a toggle
+  // button's name to stay stable across presses, which rules out pairing it
+  // with an action-based name like this one.
+  const toggleLabel = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+
   return (
     <header
       className="pb-pad sticky top-0 z-40 flex items-center justify-between gap-5 border-b border-border px-[44px] py-4"
@@ -103,14 +109,15 @@ export default function SiteHeader() {
         <button
           type="button"
           onClick={toggleTheme}
-          title="Toggle theme"
-          className="grid h-[38px] w-[38px] place-items-center rounded-[10px] border border-border bg-surface text-text"
+          aria-label={toggleLabel}
+          title={toggleLabel}
+          className="grid h-[38px] w-[38px] cursor-pointer place-items-center rounded-[10px] border border-border bg-surface text-text"
         >
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
         </button>
         <a
           href="/login?next=%2Fdashboard"
-          className="flex h-[38px] items-center rounded-[10px] bg-accent px-[18px] text-sm font-semibold text-white shadow hover:text-white"
+          className="flex h-[38px] cursor-pointer items-center rounded-[10px] bg-accent px-[18px] text-sm font-semibold text-white shadow hover:text-white"
         >
           Login →
         </a>

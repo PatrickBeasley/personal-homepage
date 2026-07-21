@@ -12,7 +12,8 @@ export default function SiteFooter() {
             Patrick Beasley
           </div>
           <p className="text-xs leading-[1.7] text-muted">
-            © {new Date().getFullYear()} Patrick Beasley. All rights reserved. The content on
+            © {new Date().getFullYear()}{" "}
+            Patrick Beasley. All rights reserved. The content on
             this site is provided for informational purposes only and is offered &ldquo;as
             is&rdquo; without warranty of any kind, express or implied. Views expressed are my
             own and do not represent those of any employer. External links are provided for
@@ -21,8 +22,12 @@ export default function SiteFooter() {
         </div>
         <div className="flex flex-col gap-2 text-[13px]">
           {LEGAL_LINKS.map((label) => (
+            // role="link" is what makes aria-disabled meaningful here: on a bare
+            // <span> assistive tech ignores it. These stay non-navigating because
+            // the Privacy/Terms/Cookie pages do not exist yet.
             <span
               key={label}
+              role="link"
               aria-disabled="true"
               title="Placeholder page"
               className="cursor-default text-text-2"

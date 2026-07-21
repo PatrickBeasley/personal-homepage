@@ -10,6 +10,8 @@
  * (later phase) sets data-ctx to flip between workspaces.
  */
 :root {
+  color-scheme: dark;
+
   --bg: #0c0e13;
   --surface: #14171e;
   --surface-2: #1b1f28;
@@ -31,6 +33,8 @@
 }
 
 [data-theme="light"] {
+  color-scheme: light;
+
   --bg: #f5f6f8;
   --surface: #ffffff;
   --surface-2: #eef0f4;
@@ -76,44 +80,52 @@
   --shadow-lg: var(--pb-shadow-lg);
 }
 
-* {
-  box-sizing: border-box;
-}
+/*
+ * These element/pseudo-element defaults MUST stay inside @layer base. Unlayered
+ * author declarations beat every layered one, so an unlayered `a { color }`
+ * would defeat Tailwind's own text utilities (which live in @layer utilities)
+ * and leave e.g. `text-white` on an anchor rendering as the accent colour.
+ */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-body), system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  overscroll-behavior-y: none;
-  transition: background 0.35s ease, color 0.35s ease;
-}
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+    transition: background 0.35s ease, color 0.35s ease;
+  }
 
-a {
-  color: var(--accent);
-  text-decoration: none;
-}
+  a {
+    color: var(--accent);
+    text-decoration: none;
+  }
 
-a:hover {
-  color: var(--accent-2);
-}
+  a:hover {
+    color: var(--accent-2);
+  }
 
-::selection {
-  background: var(--accent);
-  color: #fff;
-}
+  ::selection {
+    background: var(--accent);
+    color: #fff;
+  }
 
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 20px;
-  border: 3px solid var(--bg);
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 20px;
+    border: 3px solid var(--bg);
+  }
 }
 
 @keyframes pbUp {
@@ -144,6 +156,11 @@ a:hover {
   }
 }
 
+/*
+ * Intentionally unlayered: these two responsive overrides exist to beat the
+ * utilities that set the same properties (px-[44px] on .pb-pad, the header
+ * nav's display), which is why they carry !important.
+ */
 @media (max-width: 860px) {
   #pb-homelinks {
     display: none !important;

@@ -8,9 +8,14 @@ export default function AboutSection() {
           01 — About
         </div>
         <div>
-          <h2 className="mb-[18px] font-heading text-[30px] font-semibold tracking-[-0.02em]">
+          {/*
+            Sanctioned deviation from design/patrick-beasley.dc.html, which uses
+            <h2> here: the page needs exactly one <h1> for SEO/a11y. The visual
+            styling is unchanged — only the tag differs.
+          */}
+          <h1 className="mb-[18px] font-heading text-[30px] font-semibold tracking-[-0.02em]">
             Hi, I&rsquo;m Patrick.
-          </h2>
+          </h1>
           <p className="mb-4 max-w-[620px] text-base leading-[1.7] text-text-2" style={{ textWrap: "pretty" }}>
             I like taking messy ideas and turning them into things that work. Most days that
             means a code editor, a database schema, and too much coffee. When something I build
