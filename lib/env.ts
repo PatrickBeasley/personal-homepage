@@ -47,3 +47,18 @@ export function getSupabaseServiceRoleKey() {
 export function getAdminEmail() {
   return getRequiredEnv("ADMIN_EMAIL");
 }
+
+/**
+ * The canonical public origin, for anything that must not trust request
+ * headers. Magic-link redirect targets in particular: deriving an origin from
+ * `Host` or `x-forwarded-host` is how link poisoning happens.
+ *
+ * Defaults to the www host because that is canonical — the apex 307-redirects
+ * to it. (Note `app/layout.tsx`, `app/robots.ts` and `app/sitemap.ts` still
+ * default to the apex. Harmless, since the redirect resolves it, but worth
+ * unifying separately.)
+ */
+export function getSiteUrl() {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.patrickbeasley.com";
+  return raw.replace(/\/+$/, "");
+}
