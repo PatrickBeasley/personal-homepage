@@ -1,5 +1,3 @@
-const STACK = ["TypeScript", "React", "Node", "PostgreSQL", "Go", "Docker"];
-
 export default function AboutSection() {
   return (
     <section id="about" className="pb-pad scroll-mt-20 px-[44px] pt-[72px] pb-14">
@@ -16,19 +14,10 @@ export default function AboutSection() {
           <h1 className="mb-[18px] font-heading text-[30px] font-semibold tracking-[-0.02em]">
             Hiya
           </h1>
-          <p className="mb-6 max-w-[620px] text-base leading-[1.7] text-text-2" style={{ textWrap: "pretty" }}>
+          {/* No bottom margin: this is now the last element in the section. */}
+          <p className="max-w-[620px] text-base leading-[1.7] text-text-2" style={{ textWrap: "pretty" }}>
             Professional programmer, amateur chef
           </p>
-          <div className="flex flex-wrap gap-2">
-            {STACK.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-lg border border-border bg-surface-2 px-3 py-[6px] font-mono text-xs text-text-2"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
         </div>
       </div>
     </section>
