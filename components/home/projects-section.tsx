@@ -31,6 +31,9 @@ export default function ProjectsSection() {
         <div className="pt-1.5 font-mono text-xs uppercase tracking-[0.08em] text-muted">
           02 — Projects
         </div>
+        {/* The design gives this section no visible heading, but the cards' <h3>s
+            would otherwise skip a level after About's <h1>. */}
+        <h2 className="sr-only">Projects</h2>
         <div className="grid grid-cols-1 gap-[18px] sm:grid-cols-2">
           {PROJECTS.map((project) => (
             <a
