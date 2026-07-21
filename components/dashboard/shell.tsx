@@ -61,6 +61,31 @@ function tabItemClass(active: boolean) {
 const FOOTER_LINK_CLASS =
   "flex h-[38px] items-center rounded-[9px] border border-border bg-transparent px-3 text-[13px] font-medium text-text-2";
 
+/** Workspace order the swipe walks through: left goes forward, right goes back. */
+const WORKSPACE_ORDER: Workspace[] = ["work", "home"];
+
+// Swipe thresholds. Deliberately strict: a mis-fired workspace switch is far
+// more annoying than a swipe that does nothing, and the sidebar toggle is
+// always available as the explicit control.
+const SWIPE_MIN_DISTANCE = 64;
+const SWIPE_MAX_DURATION_MS = 700;
+const SWIPE_DOMINANCE = 2;
+
+/**
+ * Places a swipe must never start: text entry of any kind, including the Notes
+ * editor's contenteditable. `[data-no-swipe]` is an escape hatch for anything
+ * added later that drags horizontally on its own.
+ */
+const SWIPE_EXCLUDED =
+  'input, textarea, select, [contenteditable]:not([contenteditable="false"]), [data-no-swipe]';
+
+interface SwipeStart {
+  x: number;
+  y: number;
+  time: number;
+  pointerId: number;
+}
+
 export default function DashboardShell({
   children,
   counts,
@@ -74,6 +99,7 @@ export default function DashboardShell({
   const burgerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const swipeStart = useRef<SwipeStart | null>(null);
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
   const activeEntry = NAV_ENTRIES.find((entry) => isActive(entry.href));
@@ -85,6 +111,93 @@ export default function DashboardShell({
   const closeNav = useCallback(() => {
     setNavOpen(false);
     burgerRef.current?.focus();
+  }, []);
+
+  /*
+   * Horizontal swipe switches workspace, mirroring the sidebar toggle.
+   *
+   * Pointer Events, touch pointers only: a mouse drag is how people select
+   * text, so hijacking it would be hostile, and restricting to `touch` gets
+   * that for free. Nothing here calls `preventDefault` and nothing changes
+   * `touch-action` or `overscroll-behavior`, so ordinary vertical scrolling is
+   * completely untouched — when a drag turns into a scroll the browser fires
+   * `pointercancel` and the gesture is simply abandoned.
+   *
+   * Pull-to-refresh (the other half of this phase) was cut, not forgotten. It
+   * has to arbitrate against the browser's own scroll handling at scrollTop 0 —
+   * the single most common gesture on this page — and that arbitration cannot
+   * be exercised with synthetic pointer events, only on real touch hardware.
+   * Shipping it unverified risks swallowing the start of every downward scroll.
+   * Note also that `overscroll-behavior-y: none` in globals.css already
+   * suppresses the browser's native pull-to-refresh site-wide.
+   * See .superpowers/sdd/phase-7b-report.md.
+   */
+  const onPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (
+        event.pointerType !== "touch" ||
+        navOpen ||
+        (event.target instanceof Element && event.target.closest(SWIPE_EXCLUDED))
+      ) {
+        swipeStart.current = null;
+        return;
+      }
+
+      // A second finger means a pinch or a two-finger scroll, never a swipe.
+      if (swipeStart.current) {
+        swipeStart.current = null;
+        return;
+      }
+
+      swipeStart.current = {
+        x: event.clientX,
+        y: event.clientY,
+        time: event.timeStamp,
+        pointerId: event.pointerId,
+      };
+    },
+    [navOpen]
+  );
+
+  const onPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const start = swipeStart.current;
+      swipeStart.current = null;
+
+      if (!start || start.pointerId !== event.pointerId) {
+        return;
+      }
+
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+
+      if (event.timeStamp - start.time > SWIPE_MAX_DURATION_MS) {
+        return;
+      }
+
+      // Distance first, then horizontal dominance — a diagonal drag during a
+      // flick-scroll must not count.
+      if (Math.abs(dx) < SWIPE_MIN_DISTANCE || Math.abs(dx) < Math.abs(dy) * SWIPE_DOMINANCE) {
+        return;
+      }
+
+      // A live selection means the drag was a text selection, not a swipe.
+      if (window.getSelection()?.isCollapsed === false) {
+        return;
+      }
+
+      const index = WORKSPACE_ORDER.indexOf(workspace);
+      const next = WORKSPACE_ORDER[index + (dx < 0 ? 1 : -1)];
+
+      if (next && next !== workspace) {
+        setWorkspace(next);
+      }
+    },
+    [setWorkspace, workspace]
+  );
+
+  const onPointerCancel = useCallback(() => {
+    swipeStart.current = null;
   }, []);
 
   useEffect(() => {
@@ -128,10 +241,25 @@ export default function DashboardShell({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [navOpen]);
 
+  /*
+   * The entry animation lives on <main>, not on the outer element. The design
+   * prototype puts `animation: pbUp .4s ease both` on the outer flex container,
+   * but `animation-fill-mode: both` leaves a transform applied forever, and a
+   * transformed ancestor becomes the containing block for every
+   * `position: fixed` descendant. That silently re-anchored the mobile drawer,
+   * its scrim and the bottom tab bar to the *document* instead of the viewport:
+   * on a dashboard page taller than the screen, scrolling down carried the tab
+   * bar away with it, and opening the drawer dimmed the screen with the drawer
+   * itself parked off-screen above. Measured at 375px scrolled to y=1200
+   * (viewport 667): tab bar at top:1884, drawer at top:-1200.
+   */
   return (
     <div
       data-ctx={workspace}
-      className="flex min-h-dvh animate-[pbUp_0.4s_ease_both] motion-reduce:animate-none"
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      className="flex min-h-dvh"
     >
       {navOpen ? (
         <div
@@ -247,7 +375,7 @@ export default function DashboardShell({
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col max-[860px]:pb-24">
+      <main className="flex min-w-0 flex-1 flex-col animate-[pbUp_0.4s_ease_both] motion-reduce:animate-none max-[860px]:pb-24">
         <header
           className="pb-pad sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 border-b border-border px-8 py-[14px]"
           style={{

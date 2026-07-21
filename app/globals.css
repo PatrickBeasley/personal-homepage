@@ -168,16 +168,14 @@
 }
 
 /*
- * Intentionally unlayered: these two responsive overrides exist to beat the
- * utilities that set the same properties (px-[44px] on .pb-pad, the header
- * nav's display), which is why they carry !important.
+ * Intentionally unlayered: this responsive override exists to beat the utility
+ * that sets the same property (px-[44px] on .pb-pad), which is why it carries
+ * !important.
+ *
+ * The design hid #pb-homelinks outright below 861px. It no longer does: the
+ * anchors shrink in place instead, and drop onto their own row below 441px.
+ * See components/home/site-header.tsx.
  */
-@media (max-width: 860px) {
-  #pb-homelinks {
-    display: none !important;
-  }
-}
-
 @media (max-width: 560px) {
   .pb-pad {
     padding-left: 20px !important;
