@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overscroll-behavior-y:none}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{color:var(--accent-2)}
+  input,textarea,select,button{font-family:inherit}
+  ::selection{background:var(--accent);color:#fff}
+  [contenteditable]{outline:none}
+  [contenteditable]:empty:before{content:attr(data-ph);color:var(--muted);pointer-events:none}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:20px;border:3px solid var(--bg)}
+  /* theme tokens */
+  #pbapp{
+    --bg:#f5f6f8; --surface:#ffffff; --surface-2:#eef0f4; --elevated:#ffffff;
+    --text:#12141a; --text-2:#3a3f4b; --muted:#767d8c; --border:#e2e5ea; --border-2:#d3d7de;
+    --accent-work:#3d6bff; --accent-home:#12b886;
+    --accent:var(--accent-work); --accent-2:#5b82ff; --accent-soft:rgba(61,107,255,.12);
+    --shadow:0 1px 2px rgba(18,20,26,.06),0 8px 24px -12px rgba(18,20,26,.14);
+    --shadow-lg:0 24px 60px -20px rgba(18,20,26,.32);
+  }
+  #pbapp[data-theme="dark"]{
+    --bg:#0c0e13; --surface:#14171e; --surface-2:#1b1f28; --elevated:#181c24;
+    --text:#f2f4f8; --text-2:#c3c8d2; --muted:#79808e; --border:#232833; --border-2:#2d333f;
+    --accent-2:#7d9bff; --accent-soft:rgba(61,107,255,.16);
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 12px 32px -14px rgba(0,0,0,.7);
+    --shadow-lg:0 30px 70px -24px rgba(0,0,0,.8);
+  }
+  #pbapp[data-ctx="home"]{ --accent:var(--accent-home); --accent-2:#2fd6a3; --accent-soft:rgba(18,184,134,.14) }
+  @keyframes pbUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes pbSpin{to{transform:rotate(360deg)}}
+  @keyframes pbPop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+  #pb-tabbar{display:none}
+  #pb-burger{display:none}
+  #pb-navclose{display:none}
+  @media(max-width:860px){
+    #pb-burger{display:grid!important}
+    #pb-navclose{display:grid!important}
+    #pb-sidebar{position:fixed!important;top:0;left:0;bottom:0;height:100dvh!important;z-index:60;transform:translateX(-100%);transition:transform .28s ease;box-shadow:var(--shadow-lg)}
+    #pb-sidebar[data-open="true"]{transform:none}
+    #pb-tabbar{display:flex!important}
+    #pb-dashmain{padding-bottom:96px!important}
+    #pb-homelinks{display:none!important}
+    #pb-dashhead-title{font-size:22px!important}
+    .pb-content-grid{grid-template-columns:1fr!important}
+  }
+  @media(min-width:861px){ #pb-scrim{display:none!important} }
+  @media(max-width:560px){ .pb-pad{padding-left:20px!important;padding-right:20px!important} }
+</style>
+</helmet>
+<div id="pbapp" data-theme="{{ theme }}" data-ctx="{{ ctx }}" ref="{{ rootRef }}" style="min-height:100dvh;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,sans-serif;transition:background .35s ease,color .35s ease;position:relative">
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <div style="animation:pbUp .5s ease both">
+    <!-- nav -->
+    <header class="pb-pad" style="position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 44px;padding-top:calc(16px + env(safe-area-inset-top));background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#fff;font-size:15px;box-shadow:var(--shadow)">PB</div>
+        <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px;letter-spacing:-.01em">{{ siteName }}</span>
+      </div>
+      <nav id="pb-homelinks" style="display:flex;align-items:center;gap:30px;font-size:14px;font-weight:500;color:var(--text-2)">
+        <a href="#about" style="color:var(--text-2)">About</a>
+        <a href="#projects" style="color:var(--text-2)">Projects</a>
+        <a href="#contact" style="color:var(--text-2)">Contact</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:38px;height:38px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:grid;place-items:center">{{ themeIcon }}</button>
+        <button onClick="{{ goDash }}" style="height:38px;padding:0 18px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:14px;cursor:pointer;box-shadow:var(--shadow)">Login →</button>
+      </div>
+    </header>
+
+    <!-- about -->
+    <section id="about" class="pb-pad" style="padding:72px 44px 56px;scroll-margin-top:80px">
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:40px;max-width:960px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding-top:6px">01 — About</div>
+        <div>
+          <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;margin:0 0 18px">Hi, I'm Patrick.</h2>
+          <p style="font-size:16px;line-height:1.7;color:var(--text-2);max-width:620px;margin:0 0 16px;text-wrap:pretty">I like taking messy ideas and turning them into things that work. Most days that means a code editor, a database schema, and too much coffee. When something I build starts to save me time, I know it's worth keeping.</p>
+          <p style="font-size:16px;line-height:1.7;color:var(--text-2);max-width:620px;margin:0 0 24px;text-wrap:pretty">This site is deliberately simple. The interesting part lives behind the login.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ stack }}" as="tag" hint-placeholder-count="6">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;padding:6px 12px;border-radius:8px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2)">{{ tag }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- projects -->
+    <section id="projects" class="pb-pad" style="padding:56px 44px;border-top:1px solid var(--border);scroll-margin-top:80px">
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:40px;max-width:960px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding-top:6px">02 — Projects</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px">
+          <sc-for list="{{ projects }}" as="p" hint-placeholder-count="2">
+            <a href="{{ p.url }}" target="_blank" style="display:block;padding:24px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);color:var(--text)" style-hover="border-color:var(--accent);transform:translateY(-3px)">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px">
+                <h3 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:19px;margin:0;color:var(--text)">{{ p.name }}</h3>
+                <span style="color:var(--muted);font-size:18px">↗</span>
+              </div>
+              <p style="font-size:14px;line-height:1.6;color:var(--text-2);margin:0 0 12px">{{ p.desc }}</p>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">{{ p.host }}</span>
+            </a>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <!-- contact -->
+    <section id="contact" class="pb-pad" style="padding:56px 44px;border-top:1px solid var(--border);scroll-margin-top:80px">
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:40px;max-width:960px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;padding-top:6px">03 — Contact</div>
+        <div style="max-width:520px">
+          <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:30px;letter-spacing:-.02em;margin:0 0 18px">Say hello.</h2>
+          <form onSubmit="{{ submitContact }}" style="display:flex;flex-direction:column;gap:12px">
+            <input required placeholder="Your name" style="height:46px;padding:0 16px;border-radius:11px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);font-size:15px">
+            <input required type="email" placeholder="Your email" style="height:46px;padding:0 16px;border-radius:11px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);font-size:15px">
+            <textarea required placeholder="What's on your mind?" rows="4" style="padding:12px 16px;border-radius:11px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);font-size:15px;resize:vertical"></textarea>
+            <button type="submit" style="height:46px;border-radius:11px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:15px;cursor:pointer;box-shadow:var(--shadow)">Send message</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="pb-pad" style="padding:40px 44px;padding-bottom:calc(40px + env(safe-area-inset-bottom));border-top:1px solid var(--border);background:var(--surface-2)">
+      <div style="max-width:960px;display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-start">
+        <div style="max-width:520px">
+          <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin-bottom:10px">{{ siteName }}</div>
+          <p style="font-size:12px;line-height:1.7;color:var(--muted);margin:0">© {{ year }} Patrick Beasley. All rights reserved. The content on this site is provided for informational purposes only and is offered "as is" without warranty of any kind, express or implied. Views expressed are my own and do not represent those of any employer. External links are provided for convenience; I am not responsible for the content of third-party sites.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+          <a href="#" onClick="{{ noop }}" style="color:var(--text-2)">Privacy Policy</a>
+          <a href="#" onClick="{{ noop }}" style="color:var(--text-2)">Terms of Use</a>
+          <a href="#" onClick="{{ noop }}" style="color:var(--text-2)">Cookie Notice</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+  </sc-if>
+
+  <!-- ============ DASHBOARD ============ -->
+  <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex;min-height:100dvh;animation:pbUp .4s ease both">
+
+    <!-- mobile scrim -->
+    <sc-if value="{{ navOpen }}" hint-placeholder-val="{{ false }}">
+    <div id="pb-scrim" onClick="{{ closeNav }}" style="position:fixed;inset:0;z-index:55;background:rgba(6,8,12,.5)"></div>
+    </sc-if>
+
+    <!-- sidebar -->
+    <sc-if value="{{ showSidebar }}" hint-placeholder-val="{{ true }}">
+    <aside id="pb-sidebar" data-open="{{ navOpen }}" style="width:264px;flex:none;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100dvh;padding-top:env(safe-area-inset-top)">
+      <div style="padding:20px 18px 14px;display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:9px;background:var(--accent);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#fff;font-size:14px">PB</div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;flex:1">Dashboard</div>
+        <button id="pb-navclose" onClick="{{ closeNav }}" title="Close" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;place-items:center;font-size:16px;line-height:1">×</button>
+      </div>
+      <div style="padding:0 14px 14px">{{ ctxSwitch }}</div>
+      <nav style="display:flex;flex-direction:column;gap:3px;padding:8px 12px;flex:1">
+        <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="4">
+          <button onClick="{{ n.onClick }}" style="{{ n.style }}">
+            <span style="display:flex;align-items:center;gap:11px">{{ n.iconEl }}<span>{{ n.label }}</span></span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.6">{{ n.count }}</span>
+          </button>
+        </sc-for>
+      </nav>
+      <div style="padding:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px">
+        <button onClick="{{ goHome }}" style="margin-top:6px;height:38px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;text-align:left;padding:0 12px">← Back to site</button>
+        <button onClick="{{ logout }}" style="height:38px;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;text-align:left;padding:0 12px">Log out</button>
+      </div>
+    </aside>
+    </sc-if>
+
+    <!-- main -->
+    <main id="pb-dashmain" style="flex:1;min-width:0;display:flex;flex-direction:column">
+      <!-- dashboard header -->
+      <header class="pb-pad" style="position:sticky;top:0;z-index:30;padding:14px 32px;padding-top:calc(14px + env(safe-area-inset-top));background:color-mix(in srgb,var(--bg) 84%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:14px;min-width:0">
+          <button id="pb-burger" onClick="{{ openNav }}" title="Menu" style="width:40px;height:40px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;place-items:center">{{ iconMenu }}</button>
+          <div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:.06em">{{ ctxLabel }} WORKSPACE</div>
+            <h1 id="pb-dashhead-title" style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:26px;margin:2px 0 0;letter-spacing:-.02em">{{ sectionTitle }}</h1>
+          </div>
+        </div>
+        <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:40px;height:40px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;display:grid;place-items:center">{{ themeIcon }}</button>
+      </header>
+
+      <!-- pull-to-refresh indicator -->
+      <sc-if value="{{ refreshing }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;color:var(--muted);font-size:13px">
+        <span style="width:16px;height:16px;border:2px solid var(--border-2);border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:pbSpin .7s linear infinite"></span> Syncing…
+      </div>
+      </sc-if>
+
+      <!-- content -->
+      <div class="pb-pad {{ contentGridClass }}" style="{{ contentStyle }}" onTouchStart="{{ onTouchStart }}" onTouchEnd="{{ onTouchEnd }}">
+
+        <!-- LINKS -->
+        <sc-if value="{{ wLinks.shown }}" hint-placeholder-val="{{ true }}">
+        <div style="{{ wLinks.style }}" onDragOver="{{ wLinks.onDragOver }}" onDrop="{{ wLinks.onDrop }}">
+          <sc-if value="{{ wLinks.chrome }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <div draggable="true" onDragStart="{{ wLinks.onDragStart }}" title="Drag to reorder" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:grab;font-size:11px;font-family:'IBM Plex Mono',monospace">{{ iconGrip }}DRAG</div>
+            <div style="flex:1"></div>
+            <button onClick="{{ wLinks.onResize }}" title="Resize" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:grid;place-items:center">{{ wLinks.spanIcon }}</button>
+            <button onClick="{{ wLinks.onDismiss }}" title="Hide widget" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconClose }}</button>
+          </div>
+          </sc-if>
+          <section style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:160px">
+              <span style="color:var(--accent)">{{ iconLink }}</span>
+              <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin:0">Links</h2>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">{{ linkCount }}</span>
+            </div>
+            <button onClick="{{ toggleLinkForm }}" style="height:34px;padding:0 14px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px">+ Add link</button>
+          </div>
+
+          <sc-if value="{{ showLinkForm }}" hint-placeholder-val="{{ false }}">
+          <form onSubmit="{{ addLink }}" style="padding:16px 20px;border-bottom:1px solid var(--border);background:var(--surface-2);display:grid;grid-template-columns:1fr 1fr auto auto;gap:10px;animation:pbPop .2s ease both">
+            <input value="{{ draftTitle }}" onChange="{{ setDraftTitle }}" placeholder="Title" required style="height:38px;padding:0 12px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);font-size:14px;grid-column:span 2">
+            <input value="{{ draftUrl }}" onChange="{{ setDraftUrl }}" placeholder="https://…" required style="height:38px;padding:0 12px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);font-size:14px;grid-column:span 2">
+            <select value="{{ draftCat }}" onChange="{{ setDraftCat }}" style="height:38px;padding:0 12px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface);color:var(--text);font-size:14px">
+              <sc-for list="{{ ctxLinkCats }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for>
+            </select>
+            <button type="submit" style="height:38px;padding:0 16px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:14px;cursor:pointer">Save</button>
+          </form>
+          </sc-if>
+
+          <!-- controls -->
+          <div style="padding:12px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+            <div style="position:relative;flex:1;min-width:150px">
+              <span style="position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted)">{{ iconSearch }}</span>
+              <input value="{{ linkQuery }}" onChange="{{ setLinkQuery }}" placeholder="Search links…" style="width:100%;height:36px;padding:0 12px 0 34px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+            </div>
+            <select value="{{ linkFilter }}" onChange="{{ setLinkFilter }}" style="height:36px;padding:0 10px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+              <option value="all">All categories</option>
+              <sc-for list="{{ ctxLinkCats }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for>
+            </select>
+            <select value="{{ linkSort }}" onChange="{{ setLinkSort }}" style="height:36px;padding:0 10px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+              <option value="recent">Recent</option>
+              <option value="alpha">A–Z</option>
+              <option value="category">Category</option>
+            </select>
+          </div>
+
+          <div style="flex:1;overflow:auto;max-height:520px">
+            <sc-for list="{{ visibleLinks }}" as="l" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface-2)">
+                <div style="width:34px;height:34px;flex:none;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600">{{ l.badge }}</div>
+                <div style="flex:1;min-width:0">
+                  <a href="{{ l.url }}" target="_blank" style="font-weight:600;font-size:14px;color:var(--text);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.title }}</a>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ l.host }}</div>
+                </div>
+                <span style="font-size:11px;padding:3px 9px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);white-space:nowrap">{{ l.cat }}</span>
+                <button onClick="{{ l.remove }}" title="Delete" style="width:30px;height:30px;flex:none;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconTrash }}</button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noLinks }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:48px 20px;text-align:center;color:var(--muted);font-size:14px">No links yet. Add your first one ↑</div>
+            </sc-if>
+          </div>
+        </section>
+        </div>
+        </sc-if>
+
+        <!-- NOTES -->
+        <sc-if value="{{ wNotes.shown }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ wNotes.style }}" onDragOver="{{ wNotes.onDragOver }}" onDrop="{{ wNotes.onDrop }}">
+          <sc-if value="{{ wNotes.chrome }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <div draggable="true" onDragStart="{{ wNotes.onDragStart }}" title="Drag to reorder" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:grab;font-size:11px;font-family:'IBM Plex Mono',monospace">{{ iconGrip }}DRAG</div>
+            <div style="flex:1"></div>
+            <button onClick="{{ wNotes.onResize }}" title="Resize" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:grid;place-items:center">{{ wNotes.spanIcon }}</button>
+            <button onClick="{{ wNotes.onDismiss }}" title="Hide widget" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconClose }}</button>
+          </div>
+          </sc-if>
+          <section style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:160px">
+              <span style="color:var(--accent)">{{ iconNote }}</span>
+              <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin:0">Notes</h2>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">{{ noteCount }}</span>
+            </div>
+            <button onClick="{{ newNote }}" style="height:34px;padding:0 14px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:13px;cursor:pointer">+ New note</button>
+          </div>
+          <div style="display:grid;grid-template-columns:{{ notesCols }};min-height:360px">
+            <!-- list -->
+            <div style="border-right:1px solid var(--border);display:flex;flex-direction:column">
+              <div style="padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid var(--border)">
+                <input value="{{ noteQuery }}" onChange="{{ setNoteQuery }}" placeholder="Search…" style="flex:1;min-width:0;height:34px;padding:0 12px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+                <select value="{{ noteFilter }}" onChange="{{ setNoteFilter }}" style="height:34px;padding:0 8px;border-radius:9px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+                  <option value="all">All</option>
+                  <sc-for list="{{ ctxNoteCats }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for>
+                </select>
+              </div>
+              <div style="flex:1;overflow:auto;max-height:460px">
+                <sc-for list="{{ visibleNotes }}" as="n" hint-placeholder-count="4">
+                  <button onClick="{{ n.open }}" style="{{ n.rowStyle }}">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                      <span style="font-weight:600;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.title }}</span>
+                      <span style="font-size:10px;padding:2px 7px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2);white-space:nowrap">{{ n.cat }}</span>
+                    </div>
+                    <div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.preview }}</div>
+                  </button>
+                </sc-for>
+                <sc-if value="{{ noNotes }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:40px 16px;text-align:center;color:var(--muted);font-size:13px">No notes. Create one ↑</div>
+                </sc-if>
+              </div>
+            </div>
+            <!-- editor -->
+            <div style="display:flex;flex-direction:column;min-width:0">
+              <sc-if value="{{ hasActiveNote }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;flex:1;min-height:0">
+                <div style="padding:12px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)">
+                  <input value="{{ activeTitle }}" onChange="{{ setActiveTitle }}" placeholder="Untitled" style="flex:1;min-width:0;height:36px;padding:0 10px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--text);font-size:16px;font-weight:600;font-family:'Space Grotesk',sans-serif">
+                  <select value="{{ activeCat }}" onChange="{{ setActiveCat }}" style="height:34px;padding:0 8px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+                    <sc-for list="{{ ctxNoteCats }}" as="c" hint-placeholder-count="4"><option value="{{ c }}">{{ c }}</option></sc-for>
+                  </select>
+                  <button onClick="{{ deleteActiveNote }}" title="Delete note" style="width:34px;height:34px;flex:none;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconTrash }}</button>
+                </div>
+                <div style="padding:6px 10px;display:flex;gap:4px;border-bottom:1px solid var(--border);background:var(--surface-2)">
+                  <button onClick="{{ execBold }}" title="Bold" style="width:32px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-weight:700;font-size:13px">B</button>
+                  <button onClick="{{ execItalic }}" title="Italic" style="width:32px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-style:italic;font-size:13px">i</button>
+                  <button onClick="{{ execUl }}" title="Bullet list" style="width:32px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:13px">•</button>
+                  <button onClick="{{ execH }}" title="Heading" style="width:32px;height:30px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-weight:700;font-size:12px">H</button>
+                  <div style="flex:1"></div>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);align-self:center">spellcheck on · {{ activeSaved }}</span>
+                </div>
+                <div ref="{{ editorRef }}" contenteditable="true" spellcheck="true" data-ph="Start writing… spellcheck is on." onInput="{{ onEditorInput }}" style="flex:1;overflow:auto;padding:18px 18px;min-height:200px;font-size:15px;line-height:1.7;color:var(--text)"></div>
+              </div>
+              </sc-if>
+              <sc-if value="{{ noActiveNote }}" hint-placeholder-val="{{ true }}">
+              <div style="flex:1;display:grid;place-items:center;padding:40px;text-align:center;color:var(--muted);font-size:14px">Select a note, or create a new one.</div>
+              </sc-if>
+            </div>
+          </div>
+        </section>
+        </div>
+        </sc-if>
+
+        <!-- DOCUMENTS -->
+        <sc-if value="{{ wDocs.shown }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ wDocs.style }}" onDragOver="{{ wDocs.onDragOver }}" onDrop="{{ wDocs.onDrop }}">
+          <sc-if value="{{ wDocs.chrome }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <div draggable="true" onDragStart="{{ wDocs.onDragStart }}" title="Drag to reorder" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:grab;font-size:11px;font-family:'IBM Plex Mono',monospace">{{ iconGrip }}DRAG</div>
+            <div style="flex:1"></div>
+            <button onClick="{{ wDocs.onResize }}" title="Resize" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:grid;place-items:center">{{ wDocs.spanIcon }}</button>
+            <button onClick="{{ wDocs.onDismiss }}" title="Hide widget" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconClose }}</button>
+          </div>
+          </sc-if>
+          <section style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column">
+          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:160px">
+              <span style="color:var(--accent)">{{ iconDoc }}</span>
+              <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin:0">Documents</h2>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">{{ docCount }} · shared</span>
+            </div>
+            <button onClick="{{ openFilePicker }}" style="height:34px;padding:0 14px;border-radius:9px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:13px;cursor:pointer">↑ Upload</button>
+            <input ref="{{ fileRef }}" type="file" multiple onChange="{{ onFiles }}" style="display:none">
+          </div>
+          <div onDragOver="{{ onDragOver }}" onDrop="{{ onDrop }}" style="margin:16px 20px;padding:22px;border:1.5px dashed var(--border-2);border-radius:12px;text-align:center;color:var(--muted);font-size:13px;background:var(--surface-2)">
+            Drag files here, or <button onClick="{{ openFilePicker }}" style="border:none;background:none;color:var(--accent);font-weight:600;cursor:pointer;font-size:13px;padding:0">browse</button> — stored in this browser (prototype). Connect your host provider to sync.
+          </div>
+          <div style="flex:1;overflow:auto;max-height:420px">
+            <sc-for list="{{ docs }}" as="d" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--border)" style-hover="background:var(--surface-2)">
+                <div style="width:38px;height:38px;flex:none;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600">{{ d.ext }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-weight:600;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ d.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">{{ d.size }} · {{ d.date }}</div>
+                </div>
+                <a href="{{ d.data }}" download="{{ d.name }}" style="width:32px;height:32px;flex:none;border-radius:8px;border:1px solid var(--border);display:grid;place-items:center;color:var(--text-2)" title="Download">{{ iconDownload }}</a>
+                <button onClick="{{ d.remove }}" title="Delete" style="width:32px;height:32px;flex:none;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconTrash }}</button>
+              </div>
+            </sc-for>
+            <sc-if value="{{ noDocs }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:14px">No documents yet.</div>
+            </sc-if>
+          </div>
+        </section>
+        </div>
+        </sc-if>
+
+        <!-- FEEDS -->
+        <sc-if value="{{ wFeeds.shown }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ wFeeds.style }}" onDragOver="{{ wFeeds.onDragOver }}" onDrop="{{ wFeeds.onDrop }}">
+          <sc-if value="{{ wFeeds.chrome }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+            <div draggable="true" onDragStart="{{ wFeeds.onDragStart }}" title="Drag to reorder" style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:grab;font-size:11px;font-family:'IBM Plex Mono',monospace">{{ iconGrip }}DRAG</div>
+            <div style="flex:1"></div>
+            <button onClick="{{ wFeeds.onResize }}" title="Resize" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);cursor:pointer;display:grid;place-items:center">{{ wFeeds.spanIcon }}</button>
+            <button onClick="{{ wFeeds.onDismiss }}" title="Hide widget" style="width:32px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center">{{ iconClose }}</button>
+          </div>
+          </sc-if>
+          <section style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden">
+          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <span style="color:var(--accent)">{{ iconFeed }}</span>
+            <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin:0">Feeds</h2>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">extensible</span>
+          </div>
+          <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px">
+            <sc-for list="{{ feedCards }}" as="f" hint-placeholder-count="4">
+              <div style="padding:18px;border-radius:13px;border:1px dashed var(--border-2);background:var(--surface-2);display:flex;flex-direction:column;gap:10px" style-hover="border-color:var(--accent);border-style:solid">
+                <div style="width:40px;height:40px;border-radius:10px;background:var(--surface);border:1px solid var(--border);display:grid;place-items:center;font-size:20px">{{ f.glyph }}</div>
+                <div>
+                  <div style="font-weight:600;font-size:14px">{{ f.name }}</div>
+                  <div style="font-size:12px;color:var(--muted);line-height:1.5;margin-top:3px">{{ f.desc }}</div>
+                </div>
+                <button onClick="{{ f.connect }}" style="margin-top:auto;height:32px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--accent);font-weight:600;font-size:12px;cursor:pointer">{{ f.action }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:0 20px 20px;font-size:12px;color:var(--muted);line-height:1.6">The dashboard reads its widgets from a config list, so adding a new feed type is a matter of registering it here — the layout, filtering, and Work/Home separation come for free.</div>
+        </section>
+        </div>
+        </sc-if>
+
+        <!-- SETTINGS -->
+        <sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+        <section style="background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;animation:pbPop .2s ease both">
+          <div style="padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+            <span style="color:var(--accent)">{{ iconGear }}</span>
+            <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:17px;margin:0">Categories &amp; Types</h2>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)">segregated by workspace</span>
+          </div>
+          <div style="padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+            <sc-for list="{{ settingsGroups }}" as="g" hint-placeholder-count="2">
+              <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden">
+                <div style="padding:12px 16px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border);background:var(--surface-2)">
+                  <span style="{{ g.dotStyle }}"></span>
+                  <span style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px">{{ g.ctxLabel }}</span>
+                </div>
+                <div style="padding:14px 16px;display:flex;flex-direction:column;gap:18px">
+                  <sc-for list="{{ g.lists }}" as="lst" hint-placeholder-count="2">
+                    <div>
+                      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:9px">{{ lst.label }}</div>
+                      <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px">
+                        <sc-for list="{{ lst.items }}" as="it" hint-placeholder-count="4">
+                          <span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:5px 7px 5px 11px;border-radius:20px;background:var(--surface-2);border:1px solid var(--border);color:var(--text-2)">{{ it.name }}<button onClick="{{ it.remove }}" title="Remove" style="width:17px;height:17px;border-radius:50%;border:none;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:14px;line-height:1;padding:0">×</button></span>
+                        </sc-for>
+                      </div>
+                      <form onSubmit="{{ lst.onAdd }}" style="display:flex;gap:7px">
+                        <input value="{{ lst.draftVal }}" onChange="{{ lst.onDraft }}" placeholder="Add a {{ lst.kind }}…" style="flex:1;min-width:0;height:34px;padding:0 11px;border-radius:8px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:13px">
+                        <button type="submit" style="height:34px;padding:0 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:13px;cursor:pointer">Add</button>
+                      </form>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+        </sc-if>
+
+      </div>
+    </main>
+
+    <!-- iOS bottom tab bar -->
+    <nav id="pb-tabbar" style="position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(20px);border-top:1px solid var(--border);align-items:stretch;justify-content:space-around;gap:2px">
+      <sc-for list="{{ navItemsTab }}" as="n" hint-placeholder-count="4">
+        <button onClick="{{ n.onClick }}" style="{{ n.tabbarStyle }}">
+          {{ n.iconEl }}<span style="font-size:10px;font-weight:600">{{ n.label }}</span>
+        </button>
+      </sc-for>
+    </nav>
+  </div>
+  </sc-if>
+
+  <!-- ============ LOGIN MODAL ============ -->
+  <sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeLogin }}" style="position:fixed;inset:0;z-index:100;background:rgba(6,8,12,.55);backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px;animation:pbUp .2s ease both">
+    <form onClick="{{ stop }}" onSubmit="{{ doLogin }}" style="width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-lg);padding:32px;animation:pbPop .25s ease both">
+      <div style="width:46px;height:46px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#fff;font-size:17px;margin-bottom:18px">PB</div>
+      <h2 style="font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:22px;margin:0 0 6px;letter-spacing:-.02em">Private dashboard</h2>
+      <p style="font-size:13px;color:var(--muted);margin:0 0 20px">Sign in to continue. <span style="color:var(--accent)">Demo: any credentials work.</span></p>
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <input required placeholder="Username" autoComplete="username" style="height:46px;padding:0 15px;border-radius:11px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:15px">
+        <input required type="password" placeholder="Password" autoComplete="current-password" style="height:46px;padding:0 15px;border-radius:11px;border:1px solid var(--border-2);background:var(--surface-2);color:var(--text);font-size:15px">
+        <button type="submit" style="height:48px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:600;font-size:15px;cursor:pointer;margin-top:4px">Sign in →</button>
+        <button type="button" onClick="{{ closeLogin }}" style="height:40px;border-radius:11px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer">Cancel</button>
+      </div>
+    </form>
+  </div>
+  </sc-if>
+
+  <!-- toast -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:120;background:var(--text);color:var(--bg);padding:11px 20px;border-radius:12px;font-size:14px;font-weight:500;box-shadow:var(--shadow-lg);animation:pbPop .25s ease both">{{ toast }}</div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:760},&quot;siteName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Patrick Beasley&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;},&quot;defaultTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;,&quot;section&quot;:&quot;Brand&quot;},&quot;defaultLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;sidebar&quot;,&quot;grid&quot;],&quot;default&quot;:&quot;sidebar&quot;,&quot;tsType&quot;:&quot;'sidebar'|'grid'&quot;,&quot;section&quot;:&quot;Dashboard&quot;},&quot;accentWork&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#3d6bff&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;},&quot;accentHome&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#12b886&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Brand&quot;}}">
+const KEY = 'pb_dash_v2';
+const ICONS = {
+  link:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>',
+  note:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13l3 3v13H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>',
+  doc:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>',
+  feed:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none"/></svg>',
+  search:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  trash:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  download:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16"/></svg>',
+  sun:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>',
+  moon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  lock:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  work:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  home:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>',
+  grid:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  menu:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  gear:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></svg>',
+  grip:'<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
+  close:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  expand:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H4v5M20 15v5h-5M4 4l6 6M20 20l-6-6"/></svg>',
+  collapse:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4v5H5M14 20v-5h5M4 5l6 4M20 19l-6-4"/></svg>',
+};
+const DEFAULT_CATS = {
+  work:{ link:['Dev','Docs','Tools','Cloud','Ops'], note:['Task','Meeting','Idea','Log'] },
+  home:{ link:['Media','Shopping','Finance','Health','Learn'], note:['Idea','Todo','Journal','Recipe'] },
+};
+const WKEYS=['links','notes','docs','feeds'];
+const WNAMES={links:'Links',notes:'Notes',docs:'Documents',feeds:'Feeds'};
+const WIC={links:ICONS.link,notes:ICONS.note,docs:ICONS.doc,feeds:ICONS.feed};
+function svg(s){ return React.createElement('span',{style:{display:'inline-flex'},dangerouslySetInnerHTML:{__html:s}}); }
+
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const s = this.load();
+    this.state = {
+      theme: (s.prefs&&s.prefs.theme) || props.defaultTheme || 'dark',
+      layout: (s.prefs&&s.prefs.layout==='topbar'?'sidebar':(s.prefs&&s.prefs.layout)) || props.defaultLayout || 'sidebar',
+      view: 'home', authed:false, showLogin:false,
+      ctx: 'work', section:'links', navOpen:false,
+      gridOrder: (s.prefs&&s.prefs.gridOrder) || ['links','notes','docs','feeds'],
+      gridHidden: (s.prefs&&s.prefs.gridHidden) || [],
+      gridSpan: (s.prefs&&s.prefs.gridSpan) || {links:2,notes:2,docs:1,feeds:1},
+      cats: s.cats || JSON.parse(JSON.stringify(DEFAULT_CATS)), catDraft:{},
+      links: s.links || this.seedLinks(),
+      notes: s.notes || this.seedNotes(),
+      docs: s.docs || [],
+      draft:{title:'',url:'',cat:''}, showLinkForm:false,
+      linkQuery:'', linkSort:'recent', linkFilter:'all',
+      noteQuery:'', noteSort:'recent', noteFilter:'all', activeNote:null, savedFlag:'saved',
+      refreshing:false, toast:'',
+    };
+    this.rootRef = React.createRef();
+    this.editorRef = React.createRef();
+    this.fileRef = React.createRef();
+    this._touch = null; this._drag = null;
+  }
+  componentDidMount(){ this.applyAccents(); }
+  componentDidUpdate(){ this.applyAccents(); }
+  applyAccents(){
+    const el = this.rootRef.current; if(!el) return;
+    if(this.props.accentWork) el.style.setProperty('--accent-work', this.props.accentWork);
+    if(this.props.accentHome) el.style.setProperty('--accent-home', this.props.accentHome);
+  }
+  load(){ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } }
+  persist(){ const {theme,layout,gridOrder,gridHidden,gridSpan,cats,links,notes,docs}=this.state; try{ localStorage.setItem(KEY, JSON.stringify({prefs:{theme,layout,gridOrder,gridHidden,gridSpan},cats,links,notes,docs})); }catch(e){} }
+  save(u){ this.setState(u, ()=>this.persist()); }
+  toast(m){ this.setState({toast:m}); clearTimeout(this._tt); this._tt=setTimeout(()=>this.setState({toast:''}),1900); }
+  uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+  seedLinks(){ const now=Date.now(); return [
+    {id:'l1',title:'Get Stuff Done',url:'https://www.project-gsd.com',cat:'Dev',ctx:'work',created:now},
+    {id:'l2',title:'Vercel Dashboard',url:'https://vercel.com/dashboard',cat:'Cloud',ctx:'work',created:now-8e6},
+    {id:'l3',title:'MDN Web Docs',url:'https://developer.mozilla.org',cat:'Docs',ctx:'work',created:now-2e7},
+    {id:'l4',title:'Linear',url:'https://linear.app',cat:'Tools',ctx:'work',created:now-3e7},
+    {id:'l5',title:'Pokémon Database',url:'https://pogo-db.com/',cat:'Media',ctx:'home',created:now-1e6},
+    {id:'l6',title:'YouTube',url:'https://youtube.com',cat:'Media',ctx:'home',created:now-9e6},
+    {id:'l7',title:'Mint Budget',url:'https://mint.intuit.com',cat:'Finance',ctx:'home',created:now-4e7},
+  ]; }
+  seedNotes(){ const now=Date.now(); return [
+    {id:'n1',title:'Sprint standup',body:'<b>Blockers:</b> auth token refresh.<br>Ship links widget by Fri.',cat:'Meeting',ctx:'work',updated:now},
+    {id:'n2',title:'Refactor ideas',body:'Move filtering into a reducer. Registry-based widgets.',cat:'Idea',ctx:'work',updated:now-6e6},
+    {id:'n3',title:'Groceries',body:'<ul><li>Coffee</li><li>Oat milk</li><li>Eggs</li></ul>',cat:'Todo',ctx:'home',updated:now-3e6},
+  ]; }
+
+  // ---- navigation / auth ----
+  toggleTheme(){ this.save(s=>({theme:s.theme==='dark'?'light':'dark'})); }
+  goDash(){ if(this.state.authed) this.setState({view:'dashboard'}); else this.setState({showLogin:true}); }
+  goHome(){ this.setState({view:'home',navOpen:false}); }
+  doLogin(e){ e.preventDefault(); this.setState({authed:true,showLogin:false,view:'dashboard'}); this.toast('Signed in'); }
+  logout(){ this.setState({authed:false,view:'home',navOpen:false}); this.toast('Signed out'); }
+  setCtx(c){ this.setState({ctx:c,activeNote:null,linkFilter:'all',noteFilter:'all',linkQuery:'',noteQuery:''}); }
+  setSection(sec){ this.setState({section:sec,navOpen:false}); }
+  setCatDraft(ctx,kind,val){ const key=ctx+'_'+kind; this.setState(s=>({catDraft:{...s.catDraft,[key]:val}})); }
+  addCat(ctx,kind){ const key=ctx+'_'+kind; const v=(this.state.catDraft[key]||'').trim(); if(!v) return;
+    if(this.state.cats[ctx][kind].some(c=>c.toLowerCase()===v.toLowerCase())){ this.toast('Already exists'); return; }
+    this.save(s=>({cats:{...s.cats,[ctx]:{...s.cats[ctx],[kind]:[...s.cats[ctx][kind],v]}},catDraft:{...s.catDraft,[key]:''}})); this.toast('Added'); }
+  removeCat(ctx,kind,name){ if(this.state.cats[ctx][kind].length<=1){ this.toast('Keep at least one'); return; }
+    this.save(s=>({cats:{...s.cats,[ctx]:{...s.cats[ctx],[kind]:s.cats[ctx][kind].filter(c=>c!==name)}}})); }
+  setLayout(l){ this.save(s=>({layout:l, section:(l==='grid'&&s.section==='widgets')?'links':s.section, navOpen:false})); }
+  openWidgets(){ this.save({section:'widgets',layout:'sidebar',navOpen:false}); }
+  openNav(){ this.setState({navOpen:true}); }
+  closeNav(){ this.setState({navOpen:false}); }
+  reorder(from,to){ if(!from||from===to) return; this.save(s=>{ const o=s.gridOrder.filter(k=>k!==from); const ti=o.indexOf(to); o.splice(ti<0?o.length:ti,0,from); return {gridOrder:o}; }); }
+  cycleSpan(key){ this.save(s=>({gridSpan:{...s.gridSpan,[key]:((s.gridSpan[key]||1)===2?1:2)}})); }
+  dismissWidget(key){ this.save(s=>({gridHidden:Array.from(new Set([...s.gridHidden,key]))})); this.toast(WNAMES[key]+' hidden'); }
+  showWidget(key){ this.save(s=>({gridHidden:s.gridHidden.filter(k=>k!==key)})); this.toast(WNAMES[key]+' shown'); }
+  toggleWidget(key){ this.state.gridHidden.includes(key)?this.showWidget(key):this.dismissWidget(key); }
+  resetLayout(){ this.save({gridOrder:['links','notes','docs','feeds'],gridHidden:[],gridSpan:{links:2,notes:2,docs:1,feeds:1}}); this.toast('Layout reset'); }
+
+  // ---- touch: swipe ctx + pull refresh ----
+  onTouchStart(e){ const t=e.touches[0]; this._touch={x:t.clientX,y:t.clientY,top:(e.currentTarget.scrollTop||window.scrollY||0)}; }
+  onTouchEnd(e){ if(!this._touch) return; const t=e.changedTouches[0]; const dx=t.clientX-this._touch.x, dy=t.clientY-this._touch.y;
+    if(Math.abs(dx)>70 && Math.abs(dx)>Math.abs(dy)*1.5){ this.setCtx(dx<0?'home':'work'); this.toast(dx<0?'Home workspace':'Work workspace'); }
+    else if(dy>110 && this._touch.top<6 && Math.abs(dy)>Math.abs(dx)){ this.doRefresh(); }
+    this._touch=null; }
+  doRefresh(){ this.setState({refreshing:true}); clearTimeout(this._rt); this._rt=setTimeout(()=>{ this.setState({refreshing:false}); this.toast('Up to date'); },900); }
+
+  // ---- links ----
+  addLink(e){ e.preventDefault(); const d=this.state.draft; let url=d.url.trim(); if(!/^https?:\/\//.test(url)) url='https://'+url;
+    const cat=d.cat||this.state.cats[this.state.ctx].link[0];
+    this.save(s=>({links:[{id:this.uid(),title:d.title.trim(),url,cat,ctx:s.ctx,created:Date.now()},...s.links],draft:{title:'',url:'',cat:''},showLinkForm:false}));
+    this.toast('Link added'); }
+  removeLink(id){ this.save(s=>({links:s.links.filter(l=>l.id!==id)})); }
+
+  // ---- notes ----
+  newNote(){ const id=this.uid(); const note={id,title:'',body:'',cat:this.state.cats[this.state.ctx].note[0],ctx:this.state.ctx,updated:Date.now()};
+    this.save(s=>({notes:[note,...s.notes],activeNote:id}));
+    setTimeout(()=>{ if(this.editorRef.current){ this.editorRef.current.innerHTML=''; this.editorRef.current.focus(); } },40); }
+  openNote(id){ const n=this.state.notes.find(x=>x.id===id); this.setState({activeNote:id},()=>{ if(this.editorRef.current) this.editorRef.current.innerHTML=n?n.body:''; }); }
+  patchNote(id,patch){ this.save(s=>({notes:s.notes.map(n=>n.id===id?{...n,...patch,updated:Date.now()}:n)})); }
+  setActiveTitle(e){ this.patchNote(this.state.activeNote,{title:e.target.value}); }
+  setActiveCat(e){ this.patchNote(this.state.activeNote,{cat:e.target.value}); }
+  onEditorInput(e){ this.setState({savedFlag:'saving'}); clearTimeout(this._st); const html=e.currentTarget.innerHTML; const id=this.state.activeNote;
+    this._st=setTimeout(()=>{ this.patchNote(id,{body:html}); this.setState({savedFlag:'saved'}); },300); }
+  deleteActiveNote(){ const id=this.state.activeNote; this.save(s=>({notes:s.notes.filter(n=>n.id!==id),activeNote:null})); this.toast('Note deleted'); }
+  exec(cmd,val){ document.execCommand(cmd,false,val||null); if(this.editorRef.current){ this.editorRef.current.focus(); const id=this.state.activeNote; this.patchNote(id,{body:this.editorRef.current.innerHTML}); } }
+
+  // ---- docs ----
+  openFilePicker(){ this.fileRef.current && this.fileRef.current.click(); }
+  onFiles(e){ this.ingest(e.target.files); e.target.value=''; }
+  onDragOver(e){ e.preventDefault(); }
+  onDrop(e){ e.preventDefault(); this.ingest(e.dataTransfer.files); }
+  ingest(files){ const arr=Array.from(files||[]); if(!arr.length) return; let done=0; const out=[];
+    arr.forEach(f=>{ const r=new FileReader(); r.onload=()=>{ out.push({id:this.uid(),name:f.name,type:f.type,bytes:f.size,data:r.result,created:Date.now()}); if(++done===arr.length){ this.save(s=>({docs:[...out,...s.docs]})); this.toast(arr.length+' file'+(arr.length>1?'s':'')+' uploaded'); } };
+      r.onerror=()=>{ if(++done===arr.length){ this.save(s=>({docs:[...out,...s.docs]})); } }; r.readAsDataURL(f); }); }
+  removeDoc(id){ this.save(s=>({docs:s.docs.filter(d=>d.id!==id)})); }
+
+  // ---- helpers ----
+  fmtBytes(b){ if(b<1024) return b+' B'; if(b<1048576) return (b/1024).toFixed(0)+' KB'; return (b/1048576).toFixed(1)+' MB'; }
+  fmtDate(t){ return new Date(t).toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+  host(u){ try{ return new URL(u).hostname.replace('www.',''); }catch(e){ return u; } }
+
+  renderVals(){
+    const S=this.state, ctx=S.ctx, isGrid=false, isManager=false, cols=2;
+    const dark=S.theme==='dark';
+    const linkCats=S.cats[ctx].link, noteCats=S.cats[ctx].note;
+
+    // links
+    let links=S.links.filter(l=>l.ctx===ctx);
+    if(S.linkQuery) links=links.filter(l=>(l.title+l.url).toLowerCase().includes(S.linkQuery.toLowerCase()));
+    if(S.linkFilter!=='all') links=links.filter(l=>l.cat===S.linkFilter);
+    links=[...links].sort((a,b)=> S.linkSort==='alpha'?a.title.localeCompare(b.title): S.linkSort==='category'?a.cat.localeCompare(b.cat): b.created-a.created);
+    const visibleLinks=links.map(l=>({...l,host:this.host(l.url),badge:(l.title[0]||'?').toUpperCase(),remove:()=>this.removeLink(l.id)}));
+
+    // notes
+    let notes=S.notes.filter(n=>n.ctx===ctx);
+    if(S.noteQuery) notes=notes.filter(n=>(n.title+' '+n.body).toLowerCase().includes(S.noteQuery.toLowerCase()));
+    if(S.noteFilter!=='all') notes=notes.filter(n=>n.cat===S.noteFilter);
+    notes=[...notes].sort((a,b)=> S.noteSort==='alpha'?(a.title||'').localeCompare(b.title||''): b.updated-a.updated);
+    const visibleNotes=notes.map(n=>({ id:n.id, title:n.title||'Untitled', cat:n.cat,
+      preview:(n.body||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()||'Empty note',
+      open:()=>this.openNote(n.id),
+      rowStyle:`width:100%;text-align:left;padding:12px 14px;border:none;border-bottom:1px solid var(--border);cursor:pointer;background:${n.id===S.activeNote?'var(--accent-soft)':'transparent'};border-left:3px solid ${n.id===S.activeNote?'var(--accent)':'transparent'}` }));
+    const active=S.notes.find(n=>n.id===S.activeNote);
+
+    // docs
+    const docs=S.docs.map(d=>({ ...d, ext:((d.name.split('.').pop()||'').slice(0,4)||'FILE').toUpperCase(), size:this.fmtBytes(d.bytes), date:this.fmtDate(d.created), remove:()=>this.removeDoc(d.id) }));
+
+    // nav items
+    const counts={links:visibleLinks.length,notes:notes.length,docs:S.docs.length,feeds:'∞'};
+    const sectionsNav=[...WKEYS.map(k=>[k,WNAMES[k],WIC[k],counts[k]]),['settings','Settings',ICONS.gear,'']];
+    const navItems=sectionsNav.map(([key,label,icon,count])=>{ const on = S.section===key;
+      return { key,label,count,iconEl:svg(icon), onClick:()=>this.setSection(key),
+        style:`display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:${on?600:500};background:${on?'var(--accent-soft)':'transparent'};color:${on?'var(--accent)':'var(--text-2)'}`,
+        tabbarStyle:`flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;border:none;background:none;cursor:pointer;color:${on?'var(--accent)':'var(--muted)'}` };
+    });
+    const navItemsTab=navItems.filter(n=>n.key!=='widgets'&&n.key!=='settings');
+
+    // ctx switch element
+    const ctxSwitch=React.createElement('div',{style:{display:'flex',padding:'3px',background:'var(--surface-2)',border:'1px solid var(--border)',borderRadius:'11px',gap:'3px'}},
+      [['work','Work',ICONS.work],['home','Home',ICONS.home]].map(([k,lbl,ic])=>{ const on=ctx===k;
+        return React.createElement('button',{key:k,onClick:()=>this.setCtx(k),style:{display:'flex',alignItems:'center',gap:'7px',flex:1,justifyContent:'center',height:'34px',padding:'0 14px',borderRadius:'9px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,whiteSpace:'nowrap',background:on?'var(--surface)':'transparent',color:on?'var(--accent)':'var(--muted)',boxShadow:on?'var(--shadow)':'none'}},
+          svg(ic),lbl); }));
+
+    // layout switch
+    const layoutSwitch=React.createElement('div',{style:{display:'flex',padding:'3px',background:'var(--surface-2)',border:'1px solid var(--border)',borderRadius:'10px',gap:'2px'}},
+      [['sidebar','Sidebar'],['grid','Grid']].map(([k,lbl])=>{ const on=S.layout===k;
+        return React.createElement('button',{key:k,onClick:()=>this.setLayout(k),title:lbl+' view',style:{flex:1,height:'32px',borderRadius:'8px',border:'none',cursor:'pointer',fontSize:'12px',fontWeight:600,background:on?'var(--surface)':'transparent',color:on?'var(--accent)':'var(--muted)',boxShadow:on?'var(--shadow)':'none'}},lbl); }));
+
+    const feedCards=[
+      {glyph:'📡',name:'RSS / Blog',desc:'Pull posts from any feed URL.',action:'Connect'},
+      {glyph:'🗓️',name:'Calendar',desc:'Today\u2019s events at a glance.',action:'Connect'},
+      {glyph:'🌦️',name:'Weather',desc:'Local forecast widget.',action:'Add'},
+      {glyph:'🐙',name:'GitHub',desc:'Recent commits & PRs.',action:'Connect'},
+    ].map(f=>({...f,connect:()=>this.toast(f.name+' — coming soon')}));
+
+    const mkWrap=(key)=>{
+      const hidden=S.gridHidden.includes(key);
+      const i=S.gridOrder.indexOf(key);
+      const span=Math.min(S.gridSpan[key]||1,cols);
+      const inGrid=isGrid&&!isManager&&!hidden;
+      const inList=!isGrid&&!isManager&&S.section===key;
+      return {
+        shown: inGrid||inList,
+        style: inGrid ? `order:${i<0?99:i};grid-column:span ${span};display:flex;flex-direction:column` : 'display:block',
+        chrome: inGrid,
+        spanIcon: svg(span===cols?ICONS.collapse:ICONS.expand),
+        onDragStart:(e)=>{ try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',key);}catch(_){}; this._drag=key; },
+        onDragOver:(e)=>{ if(isGrid&&!isManager) e.preventDefault(); },
+        onDrop:(e)=>{ e.preventDefault(); this.reorder(this._drag||e.dataTransfer.getData('text/plain'),key); this._drag=null; },
+        onResize:()=>this.cycleSpan(key),
+        onDismiss:()=>this.dismissWidget(key),
+      };
+    };
+    const managerItems=S.gridOrder.map(key=>{ const hidden=S.gridHidden.includes(key); const span=Math.min(S.gridSpan[key]||1,cols);
+      return { key, name:WNAMES[key], iconEl:svg(WIC[key]),
+        statusLabel: hidden?'Hidden from grid':(span===cols?'Shown · full width':'Shown · half width'),
+        spanLabel: span===cols?'Full':'Half', spanIcon: svg(span===cols?ICONS.collapse:ICONS.expand),
+        onCycleSpan:()=>this.cycleSpan(key), onToggle:()=>this.toggleWidget(key),
+        toggleLabel: hidden?'Show':'Hide',
+        toggleStyle:`height:32px;padding:0 16px;border-radius:8px;border:1px solid ${hidden?'transparent':'var(--border)'};background:${hidden?'var(--accent)':'transparent'};color:${hidden?'#fff':'var(--text-2)'};font-weight:600;font-size:13px;cursor:pointer` };
+    });
+    const sectionTitle={links:'Links',notes:'Notes',docs:'Documents',feeds:'Feeds',settings:'Settings'}[S.section]||'Dashboard';
+    const KINDS=[['link','Link categories'],['note','Note types']];
+    const settingsGroups=['work','home'].map(c=>({ ctxLabel:c==='work'?'Work':'Home',
+      dotStyle:'width:10px;height:10px;border-radius:50%;background:'+(c==='work'?'var(--accent-work)':'var(--accent-home)'),
+      lists:KINDS.map(([kind,label])=>({ kind,label,
+        items:(S.cats[c][kind]||[]).map(name=>({name,remove:()=>this.removeCat(c,kind,name)})),
+        draftVal:S.catDraft[c+'_'+kind]||'',
+        onDraft:e=>this.setCatDraft(c,kind,e.target.value),
+        onAdd:e=>{e.preventDefault(); this.addCat(c,kind);} })) }));
+
+    return {
+      // props / theme
+      siteName: this.props.siteName || 'Patrick Beasley',
+      theme:S.theme, ctx, isHome:S.view==='home', isDash:S.view==='dashboard'&&S.authed,
+      themeIcon: svg(dark?ICONS.sun:ICONS.moon), lockIcon:svg(ICONS.lock),
+      iconMenu:svg(ICONS.menu), iconGrid:svg(ICONS.grid), iconGrip:svg(ICONS.grip), iconClose:svg(ICONS.close), iconGear:svg(ICONS.gear),
+      showSettings:S.section==='settings', settingsGroups,
+      navOpen:S.navOpen, openNav:()=>this.openNav(), closeNav:()=>this.closeNav(), openWidgets:()=>this.openWidgets(),
+      toggleTheme:()=>this.toggleTheme(), goDash:()=>this.goDash(), goHome:()=>this.goHome(),
+      logout:()=>this.logout(), doLogin:e=>this.doLogin(e),
+      showLogin:S.showLogin, closeLogin:()=>this.setState({showLogin:false}), stop:e=>e.stopPropagation(),
+      noop:e=>{e.preventDefault(); this.toast('Placeholder page');},
+      submitContact:e=>{e.preventDefault(); e.target.reset&&e.target.reset(); this.toast('Message sent — thanks!');},
+      year:new Date().getFullYear(),
+      stack:['TypeScript','React','Node','PostgreSQL','Go','Docker'],
+      projects:[
+        {name:'Get Stuff Done',mono:'GSD',desc:'A focused task manager for people who just want to get things done.',url:'https://www.project-gsd.com',host:'project-gsd.com'},
+        {name:'Pokémon Database',mono:'PDB',desc:'A fast, searchable database of Pokémon GO data and stats.',url:'https://pogo-db.com/',host:'pogo-db.com'},
+      ],
+
+      // dashboard chrome
+      layout:S.layout, isGrid,
+      showSidebar:true,
+      ctxSwitch, layoutSwitch, navItems, navItemsTab, ctxLabel:ctx==='work'?'WORK':'HOME', sectionTitle,
+      contentStyle: (isGrid&&!isManager)
+        ? 'padding:24px 32px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start'
+        : 'padding:24px 32px;display:flex;flex-direction:column;gap:20px;max-width:1080px',
+      contentGridClass: (isGrid&&!isManager)?'pb-content-grid':'',
+      refreshing:S.refreshing,
+      onTouchStart:e=>this.onTouchStart(e), onTouchEnd:e=>this.onTouchEnd(e),
+
+      // widgets
+      showManager:isManager, managerItems, resetLayout:()=>this.resetLayout(),
+      wLinks:mkWrap('links'), wNotes:mkWrap('notes'), wDocs:mkWrap('docs'), wFeeds:mkWrap('feeds'),
+
+      // icons
+      iconLink:svg(ICONS.link), iconNote:svg(ICONS.note), iconDoc:svg(ICONS.doc), iconFeed:svg(ICONS.feed),
+      iconSearch:svg(ICONS.search), iconTrash:svg(ICONS.trash), iconDownload:svg(ICONS.download),
+
+      // links
+      visibleLinks, linkCount:visibleLinks.length, noLinks:visibleLinks.length===0,
+      ctxLinkCats:linkCats,
+      showLinkForm:S.showLinkForm, toggleLinkForm:()=>this.setState(s=>({showLinkForm:!s.showLinkForm})),
+      draftTitle:S.draft.title, draftUrl:S.draft.url, draftCat:S.draft.cat,
+      setDraftTitle:e=>this.setState(s=>({draft:{...s.draft,title:e.target.value}})),
+      setDraftUrl:e=>this.setState(s=>({draft:{...s.draft,url:e.target.value}})),
+      setDraftCat:e=>this.setState(s=>({draft:{...s.draft,cat:e.target.value}})),
+      addLink:e=>this.addLink(e),
+      linkQuery:S.linkQuery, setLinkQuery:e=>this.setState({linkQuery:e.target.value}),
+      linkFilter:S.linkFilter, setLinkFilter:e=>this.setState({linkFilter:e.target.value}),
+      linkSort:S.linkSort, setLinkSort:e=>this.setState({linkSort:e.target.value}),
+
+      // notes
+      visibleNotes, noteCount:notes.length, noNotes:visibleNotes.length===0, ctxNoteCats:noteCats,
+      notesCols: isGrid?'1fr':'minmax(180px,240px) 1fr',
+      noteQuery:S.noteQuery, setNoteQuery:e=>this.setState({noteQuery:e.target.value}),
+      noteFilter:S.noteFilter, setNoteFilter:e=>this.setState({noteFilter:e.target.value}),
+      newNote:()=>this.newNote(),
+      hasActiveNote:!!active, noActiveNote:!active,
+      activeTitle:active?active.title:'', activeCat:active?active.cat:noteCats[0],
+      activeSaved:S.savedFlag==='saving'?'saving…':'saved',
+      setActiveTitle:e=>this.setActiveTitle(e), setActiveCat:e=>this.setActiveCat(e),
+      onEditorInput:e=>this.onEditorInput(e), editorRef:this.editorRef,
+      deleteActiveNote:()=>this.deleteActiveNote(),
+      execBold:()=>this.exec('bold'), execItalic:()=>this.exec('italic'), execUl:()=>this.exec('insertUnorderedList'), execH:()=>this.exec('formatBlock','H3'),
+
+      // docs
+      docs, docCount:S.docs.length, noDocs:S.docs.length===0,
+      fileRef:this.fileRef, openFilePicker:()=>this.openFilePicker(), onFiles:e=>this.onFiles(e),
+      onDragOver:e=>this.onDragOver(e), onDrop:e=>this.onDrop(e),
+
+      // feeds
+      feedCards,
+    };
+  }
+}
+</script>
+</body>
+</html>
