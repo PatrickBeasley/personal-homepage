@@ -35,10 +35,11 @@ description: Use before deploying to production — verifies build, tests, env p
 - [ ] `www.` redirect configured if needed
 - [ ] All internal links use relative paths or the production domain
 
-### Auth and OAuth
-- [ ] Google OAuth app has production callback URL: `https://patrickbeasley.com/auth/callback`
-- [ ] Supabase Auth redirect URLs include production domain
-- [ ] Admin login flow tested end-to-end on production URL
+### Auth
+- [ ] Supabase Auth redirect URLs include the production domain's `/auth/confirm`
+- [ ] Admin **password** sign-in tested end-to-end on the production URL
+- [ ] Admin **magic-link** sign-in tested end-to-end on the production URL
+- [ ] Public sign-ups are disabled, and `public.admin_users` contains only the intended address
 
 ### File Upload/Download
 - [ ] Upload tested with allowed and disallowed file types

@@ -37,10 +37,14 @@ description: Use when initializing a new project module or service from scratch 
 - [ ] Verify `.env.example` is committed even if the repo ignores `.env*`
 
 ### Stage 3.5 — Auth Provider Wiring
-- [ ] Configure Google OAuth client in Google Cloud with Supabase callback URI (`https://<project-ref>.supabase.co/auth/v1/callback`)
-- [ ] Enable Google provider in Supabase Auth and save client ID/secret
-- [ ] Verify runtime provider status with `/auth/v1/settings` shows `external.google = true`
-- [ ] Run one full login flow through app callback route (`/auth/login` -> `/auth/callback`)
+Email + password, with magic link as a backup. There is no OAuth provider — see the
+2026-07-21 decision record.
+- [ ] Enable the Email provider in Supabase Auth, and **disable public sign-ups**
+- [ ] Create the admin user in Studio with **"Auto Confirm User" checked**. An unconfirmed address fails as `email_not_confirmed`, which the login form deliberately reports as the generic "Invalid email or password" — so check the Supabase auth logs, not the UI
+- [ ] Add that address to `public.admin_users`. `is_admin()` matches on **email**, not user id, so no id linkage is required
+- [ ] Leave session timebox and inactivity timeout **OFF** — this is what makes sessions last indefinitely per device
+- [ ] Add `/auth/confirm` to the redirect allowlist for local, preview **and** production (needed for magic link only; password sign-in uses no redirect)
+- [ ] Run one password sign-in and one magic-link sign-in end to end
 
 ### Stage 4 — AI Docs
 - [ ] Create all `.github/` AI markdown files with starter outlines
