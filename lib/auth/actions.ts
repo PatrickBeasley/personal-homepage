@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { normalizeNextPath } from "@/lib/auth/redirects";
+import { getSiteUrl } from "@/lib/env";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function readField(formData: FormData, name: string) {
@@ -47,4 +48,39 @@ export async function signInWithPasswordAction(formData: FormData) {
   }
 
   redirect(next);
+}
+
+/**
+ * Magic link, as a sign-in backup. `shouldCreateUser: false` means this is
+ * never a registration path.
+ *
+ * The outcome is deliberately swallowed and the confirmation is identical
+ * either way: an unknown address errors here, and surfacing that would reveal
+ * whether an account exists.
+ *
+ * `emailRedirectTo` is built from the configured site origin, never from
+ * request headers — a Host header we echo into an emailed link is a
+ * link-poisoning vector.
+ */
+export async function sendMagicLinkAction(formData: FormData) {
+  const email = readField(formData, "email").trim();
+  const next = normalizeNextPath(readField(formData, "next") || null, "/dashboard");
+
+  if (email) {
+    const supabase = await createServerSupabaseClient();
+
+    try {
+      await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${getSiteUrl()}/auth/confirm?next=${encodeURIComponent(next)}`,
+          shouldCreateUser: false,
+        },
+      });
+    } catch {
+      // Intentional. See the note above about identical outcomes.
+    }
+  }
+
+  redirect(`/login?sent=1&next=${encodeURIComponent(next)}`);
 }

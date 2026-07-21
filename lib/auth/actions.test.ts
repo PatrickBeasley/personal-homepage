@@ -6,8 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * top-level `const` throws "Cannot access before initialization". Anything a
  * mock factory references must be created inside `vi.hoisted`.
  */
-const { signInWithPassword, redirect } = vi.hoisted(() => ({
+const { signInWithPassword, signInWithOtp, redirect } = vi.hoisted(() => ({
   signInWithPassword: vi.fn(),
+  signInWithOtp: vi.fn(),
   redirect: vi.fn((url: string) => {
     // The real redirect() signals by throwing; mirroring that keeps the action
     // under test on its true control-flow path.
@@ -19,7 +20,7 @@ vi.mock("next/navigation", () => ({ redirect }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabaseClient: async () => ({
-    auth: { signInWithPassword },
+    auth: { signInWithPassword, signInWithOtp },
   }),
 }));
 
@@ -109,5 +110,46 @@ describe("signInWithPasswordAction", () => {
     );
 
     expect(target).toBe("/dashboard");
+  });
+});
+
+describe("sendMagicLinkAction", () => {
+  beforeEach(() => {
+    signInWithOtp.mockReset();
+    redirect.mockClear();
+  });
+
+  it("uses the configured site origin, never a request header", async () => {
+    signInWithOtp.mockResolvedValue({ error: null });
+
+    const { sendMagicLinkAction } = await import("./actions");
+    await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "a@b.com", next: "/dashboard" })),
+    );
+
+    const options = signInWithOtp.mock.calls[0][0].options;
+    expect(options.emailRedirectTo).toMatch(/^https:\/\//);
+    expect(options.emailRedirectTo).toContain("/auth/confirm");
+    expect(options.shouldCreateUser).toBe(false);
+  });
+
+  // Enumeration safety: an unknown address must be indistinguishable from a
+  // known one. signInWithOtp rejects unknown addresses when shouldCreateUser
+  // is false, so the rejection must not change what the user sees.
+  it("confirms identically whether or not the address exists", async () => {
+    const { sendMagicLinkAction } = await import("./actions");
+
+    signInWithOtp.mockResolvedValue({ error: null });
+    const known = await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "known@b.com", next: "/dashboard" })),
+    );
+
+    signInWithOtp.mockRejectedValue(new Error("User not found"));
+    const unknown = await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "nobody@b.com", next: "/dashboard" })),
+    );
+
+    expect(known).toBe(unknown);
+    expect(known).toContain("sent=1");
   });
 });
