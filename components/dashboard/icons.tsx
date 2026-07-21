@@ -75,6 +75,23 @@ export function HomeIcon({ size = 18 }: { size?: number }) {
   );
 }
 
+export function SearchIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" />
+    </svg>
+  );
+}
+
 export function MenuIcon({ size = 20 }: { size?: number }) {
   return (
     <svg {...base} width={size} height={size}>
