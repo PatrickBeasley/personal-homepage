@@ -10,10 +10,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Any failed magic-link landing collapses to one message: the specific
-// auth_error code must never hint at whether the address has an account.
-const LINK_ERROR_MESSAGE =
-  "That sign-in link is no longer valid. Please sign in again.";
+// Two error channels, each generic within its class. Neither ever varies by
+// whether the address has an account.
+const LINK_ERROR_MESSAGE = "That sign-in link is no longer valid. Please sign in again.";
+const CREDENTIALS_ERROR = "Invalid email or password.";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -32,7 +32,10 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const next = normalizeNextPath(firstValue(params.next), "/dashboard");
+
+  const hasCredentialError = firstValue(params.error) !== null;
   const hasLinkError = firstValue(params.auth_error) !== null;
+  const magicLinkSent = firstValue(params.sent) !== null;
 
   const { user, isAdmin } = await getUserContext();
 
@@ -40,9 +43,15 @@ export default async function LoginPage({
     redirect(isAdmin ? next : "/");
   }
 
+  const error = hasCredentialError
+    ? CREDENTIALS_ERROR
+    : hasLinkError
+      ? LINK_ERROR_MESSAGE
+      : null;
+
   return (
     <main className="flex min-h-dvh items-center justify-center px-5 py-16">
-      <LoginForm next={next} initialError={hasLinkError ? LINK_ERROR_MESSAGE : null} />
+      <LoginForm next={next} error={error} magicLinkSent={magicLinkSent} />
     </main>
   );
 }
