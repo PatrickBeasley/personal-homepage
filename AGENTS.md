@@ -42,6 +42,13 @@ Public one-pager at `/`, private dashboard at `/dashboard`. Supabase provides Po
 
 **Browser-reported MIME is unreliable.** Windows registers no content type for `.sql` or `.md`, so Chrome sends `application/octet-stream` and a MIME allowlist rejects files whose extension is explicitly permitted.
 
+**Validate redirect targets by resolving them, not by prefix-matching.** `normalizeNextPath` once rejected `//evil.com` but allowed `/\evil.com`, which browsers normalise to `//evil.com` and resolve to another host — an open redirect reachable with zero interaction for a signed-in admin. Resolve against a fixed origin and confirm the origin did not change. Any guard built from `startsWith` on a URL is a guess about how browsers parse; resolution is the answer.
+
+**Auth runs in Server Actions, and the login form is a Server Component.** This is deliberate and load-bearing, not stylistic. Two consequences to respect:
+
+- Next guarantees progressive enhancement for forms calling Server Actions **from Server Components**, but the documented way to show validation errors is a Client Component with `useActionState` — which forfeits that guarantee. Errors therefore travel by redirect (`?error=1`), at the cost of retyping the email. Do not "improve" this into inline errors without understanding what it trades away.
+- `redirect()` signals by throwing. It must never sit inside a `try`/`catch`, or the navigation is silently swallowed. Wrap the call you need to guard, and put the redirect after it.
+
 ## Verification
 
 Gate every change on `npm run lint`, `npx tsc --noEmit`, `npm test`, `npm run build`.
