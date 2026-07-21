@@ -20,7 +20,7 @@ export async function requireAdminAuth(_request: NextRequest) {
     if (error || !user) {
       return {
         error: NextResponse.json(
-          { error: "Unauthorized: No authenticated session" },
+          { error: "UNAUTHENTICATED", message: "No authenticated session." },
           { status: 401 }
         ),
       };
@@ -29,7 +29,7 @@ export async function requireAdminAuth(_request: NextRequest) {
     if (!isAdminEmail(user.email)) {
       return {
         error: NextResponse.json(
-          { error: "Forbidden: Admin access required" },
+          { error: "FORBIDDEN", message: "Admin access required." },
           { status: 403 }
         ),
       };
@@ -40,7 +40,7 @@ export async function requireAdminAuth(_request: NextRequest) {
     console.error("Admin auth guard error:", err);
     return {
       error: NextResponse.json(
-        { error: "Internal server error" },
+        { error: "INTERNAL_ERROR", message: "Internal server error." },
         { status: 500 }
       ),
     };
