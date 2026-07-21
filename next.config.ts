@@ -4,6 +4,13 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 // Extract hostname for CSP connect-src (e.g. "abc123.supabase.co")
 const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : "*.supabase.co";
 
+// React uses eval() in development to reconstruct server-side error stacks in the
+// browser. Neither React nor Next.js use eval() in production, so 'unsafe-eval' is
+// scoped to dev only and never weakens the deployed policy. Next's own CSP guide
+// (node_modules/next/dist/docs/01-app/02-guides/content-security-policy.md) uses
+// exactly this pattern for a nonce-free CSP.
+const isDev = process.env.NODE_ENV === "development";
+
 const securityHeaders = [
   {
     key: "X-DNS-Prefetch-Control",
@@ -34,7 +41,7 @@ const securityHeaders = [
     value: [
       "default-src 'self'",
       // Next.js App Router requires unsafe-inline for hydration scripts
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
       // Tailwind and CSS-in-JS requires unsafe-inline for styles
       "style-src 'self' 'unsafe-inline'",
       // next/font self-hosts fonts; data: for inline fonts
