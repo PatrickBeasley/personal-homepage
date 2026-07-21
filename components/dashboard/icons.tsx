@@ -1,0 +1,84 @@
+// Inline SVGs ported verbatim from the ICONS map in
+// design/patrick-beasley.dc.html. All decorative: the surrounding control
+// always carries its own text or aria-label.
+
+const base = {
+  "aria-hidden": true as const,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 2,
+  strokeLinecap: "round" as const,
+};
+
+export function LinkIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1" />
+      <path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
+    </svg>
+  );
+}
+
+export function NoteIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M4 4h13l3 3v13H4z" />
+      <path d="M8 9h8M8 13h8M8 17h5" />
+    </svg>
+  );
+}
+
+export function DocIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M14 3H6v18h12V7z" />
+      <path d="M14 3v4h4" />
+    </svg>
+  );
+}
+
+export function FeedIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M4 11a9 9 0 0 1 9 9" />
+      <path d="M4 4a16 16 0 0 1 16 16" />
+      <circle cx="5" cy="19" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function GearIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3.2" />
+      <path d="M19.4 13.5a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.56 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.56-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+export function WorkIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <rect x="3" y="7" width="18" height="13" rx="2" />
+      <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+}
+
+export function HomeIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M3 11l9-7 9 7" />
+      <path d="M5 10v10h14V10" />
+    </svg>
+  );
+}
+
+export function MenuIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
