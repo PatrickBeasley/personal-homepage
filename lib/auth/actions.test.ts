@@ -134,8 +134,9 @@ describe("sendMagicLinkAction", () => {
   });
 
   // Enumeration safety: an unknown address must be indistinguishable from a
-  // known one. signInWithOtp rejects unknown addresses when shouldCreateUser
-  // is false, so the rejection must not change what the user sees.
+  // known one. This covers the thrown-transport-failure path specifically
+  // (e.g. a network error) — it does not represent how signInWithOtp behaves
+  // for an actual unknown address; see the sibling test below for that.
   it("confirms identically whether or not the address exists", async () => {
     const { sendMagicLinkAction } = await import("./actions");
 
@@ -151,5 +152,28 @@ describe("sendMagicLinkAction", () => {
 
     expect(known).toBe(unknown);
     expect(known).toContain("sent=1");
+  });
+
+  // The realistic unknown-address shape. @supabase/auth-js catches AuthApiError
+  // internally and RESOLVES with { error } rather than rejecting, so this
+  // covers the path production actually takes. The sibling test above covers
+  // the thrown path; both must collapse to the same outcome.
+  it("confirms identically when the client resolves with an error", async () => {
+    const { sendMagicLinkAction } = await import("./actions");
+
+    signInWithOtp.mockResolvedValue({ data: {}, error: null });
+    const known = await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "known@b.com", next: "/dashboard" })),
+    );
+
+    signInWithOtp.mockResolvedValue({
+      data: {},
+      error: { message: "Signups not allowed for otp" },
+    });
+    const unknown = await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "nobody@b.com", next: "/dashboard" })),
+    );
+
+    expect(unknown).toBe(known);
   });
 });
