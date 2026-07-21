@@ -114,3 +114,27 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: (1) Global client helper in root layout used a hook that triggers CSR bailout requirements in static generation paths; (2) long multiline issue bodies were passed through an unsafe shell quoting path  
 **Reusable rule**: For client utilities mounted in `app/layout.tsx`, prefer minimal hooks (`usePathname`, event listeners) and avoid `useSearchParams` unless wrapped intentionally; for `gh issue create` with long content, use safer body editing patterns (`gh issue edit --body` with a here-string)  
 **Action to encode**: Add "layout-mounted client helper hook safety" to Next.js checklist and add a "safe gh issue body" snippet to planning workflow notes
+
+## 2026-07-21 — Tailwind v4: Unlayered Element Rules Silently Beat Every Utility
+**Phase/Context**: v2 rebuild Phase 1 — porting the design's base CSS into `app/globals.css`
+**What worked**: Reviewing the *built* stylesheet (`.next/static/chunks/*.css`) by brace-depth rather than trusting the source; that is what proved the bug and later proved the fix
+**What failed**: The design's bare `a { color: var(--accent) }` was pasted into `globals.css` outside any cascade layer. Tailwind v4 puts utilities in `@layer utilities`, and unlayered author declarations outrank layered ones regardless of specificity — so `text-white` on the accent-colored "Login →" button lost, rendering the label invisible against its own background. `hover:text-*` was dead for the same reason.
+**Root cause**: Tailwind v4 is layer-based; v3 habits (bare element selectors in a global sheet) are no longer safe. Nothing in lint, tsc, or build catches it — only visual inspection or reading the compiled CSS.
+**Reusable rule**: In Tailwind v4, every global element/base rule must be wrapped in `@layer base { ... }`. When a utility class appears to do nothing, check the compiled CSS for an unlayered rule on the same property before debugging anything else.
+**Action to encode**: Add to `frontend.instructions.md`: all global CSS in `globals.css` goes inside a cascade layer.
+
+## 2026-07-21 — Tailwind v4 Translate Utilities Set `translate`, Not `transform`
+**Phase/Context**: v2 rebuild Phase 3b — mobile dashboard drawer slide animation
+**What worked**: Caught in self-review before commit by checking which CSS property the emitted utility actually sets
+**What failed**: `transition-[transform,visibility]` animated nothing, because Tailwind v4's `-translate-x-full` writes the standalone CSS `translate` property rather than a `transform` function
+**Root cause**: Tailwind v4 migrated the translate utilities to the individual-transform CSS properties
+**Reusable rule**: Transitions involving Tailwind v4 translate utilities must name `translate` (e.g. `transition-[translate,visibility]`), not `transform`
+**Action to encode**: Add to `frontend.instructions.md` alongside the cascade-layer rule
+
+## 2026-07-21 — `--read-only=false` Crashes the Supabase MCP Server
+**Phase/Context**: Wiring the Supabase MCP server into the project
+**What worked**: Reading the installed bundle's `parseArgs` options object to get the real flag list, then starting the server manually to reproduce the failure
+**What failed**: `--read-only=false` throws `ERR_PARSE_ARGS_INVALID_OPTION_VALUE: Option '--read-only' does not take an argument` and the server never starts
+**Root cause**: `read-only` is declared `{type:"boolean", default:false}` — Node's `parseArgs` rejects a value on a boolean option. Presence means read-only; absence means writable.
+**Reusable rule**: For boolean CLI flags, omit the flag to disable rather than passing `=false`. Verify a new MCP server actually starts (pipe an `initialize` JSON-RPC message to it) before assuming the config is good.
+**Action to encode**: None — recorded for recall.
