@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
@@ -15,6 +15,13 @@ const EMAIL_REQUIRED = "Enter your email address first.";
 const MAGIC_LINK_SENT = "Check your email for a sign-in link.";
 
 type Pending = "idle" | "password" | "magic";
+
+/**
+ * Stable no-op subscribe for the hydration check below. Defined at module scope
+ * so its identity never changes and `useSyncExternalStore` never resubscribes —
+ * nothing external is being watched; only the server/client snapshot differs.
+ */
+const subscribeToNothing = () => () => {};
 
 const INPUT_CLASS =
   "h-[46px] w-full rounded-[11px] border border-border-2 bg-surface-2 px-[15px] text-[15px] text-text placeholder:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:opacity-60";
@@ -33,7 +40,27 @@ export default function LoginForm({
   const [error, setError] = useState<string | null>(initialError);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
 
+  /*
+   * Both controls stay disabled until React has hydrated, because until then
+   * `handlePasswordSubmit` is not attached and its `preventDefault()` cannot
+   * run. A submit in that window is a *native* form submit, which is how
+   * credentials ended up in the query string on a machine where the bundle
+   * never executed. `method="post"` on the form below is the real containment
+   * for that; this is the second layer, and it also turns a form that looks
+   * functional but silently does nothing into one that visibly explains why.
+   *
+   * Server-rendered HTML has this false, so the notice is present without JS
+   * and disappears on hydration.
+   *
+   * `useSyncExternalStore` rather than the reflexive setState-in-an-effect:
+   * the server snapshot is false and the client snapshot is true, which is
+   * exactly the question being asked, and it cannot trigger the cascading
+   * render that `react-hooks/set-state-in-effect` exists to prevent.
+   */
+  const hydrated = useSyncExternalStore(subscribeToNothing, () => true, () => false);
+
   const busy = pending !== "idle";
+  const disabled = busy || !hydrated;
 
   async function handlePasswordSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -129,7 +156,20 @@ export default function LoginForm({
         <>
           <p className="m-0 mb-5 text-[13px] text-muted">Sign in to continue.</p>
 
-          <form onSubmit={handlePasswordSubmit} className="flex flex-col gap-[11px]">
+          {/*
+            `method="post"` is load-bearing security, not a formality. If this
+            form is ever submitted natively — because the bundle was blocked,
+            failed, or had not hydrated yet — the browser serialises every named
+            field. With the default GET that put the email and password in the
+            query string, and from there into browser history, Vercel's request
+            logs, and any intercepting corporate proxy. POST puts them in the
+            request body instead. Do not remove this, and do not add `action`.
+          */}
+          <form
+            onSubmit={handlePasswordSubmit}
+            method="post"
+            className="flex flex-col gap-[11px]"
+          >
             <label htmlFor="login-email" className="sr-only">
               Email
             </label>
@@ -142,7 +182,7 @@ export default function LoginForm({
               placeholder="Email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              disabled={busy}
+              disabled={disabled}
               className={INPUT_CLASS}
             />
 
@@ -158,7 +198,7 @@ export default function LoginForm({
               placeholder="Password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              disabled={busy}
+              disabled={disabled}
               className={INPUT_CLASS}
             />
 
@@ -173,7 +213,7 @@ export default function LoginForm({
 
             <button
               type="submit"
-              disabled={busy}
+              disabled={disabled}
               className="mt-1 h-12 cursor-pointer rounded-[12px] bg-accent text-[15px] font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pending === "password" ? "Signing in…" : "Sign in →"}
@@ -182,11 +222,24 @@ export default function LoginForm({
             <button
               type="button"
               onClick={handleMagicLink}
-              disabled={busy}
+              disabled={disabled}
               className="h-10 cursor-pointer rounded-[11px] bg-transparent text-[13px] text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pending === "magic" ? "Sending…" : "Email me a magic link"}
             </button>
+
+            {/*
+              Present in the server-rendered HTML and removed on hydration, so
+              it is invisible on a normal load and permanent when the bundle
+              never runs. Without it the form looks entirely functional and
+              silently does nothing, which is exactly how this was found.
+            */}
+            {!hydrated ? (
+              <p role="status" className="m-0 text-center text-[12px] text-muted">
+                Loading… if this message stays, JavaScript is blocked here and sign-in
+                will not work.
+              </p>
+            ) : null}
 
             <Link
               href="/"
