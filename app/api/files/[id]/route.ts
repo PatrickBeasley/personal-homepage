@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdminAuth } from "@/lib/auth/admin-guard";
+import { apiError, isUuid, readJsonObject } from "@/lib/dashboard/api";
 
 /**
  * PATCH /api/files/[id]
@@ -18,28 +19,37 @@ export async function PATCH(
   const { supabase } = authResult;
   const { id } = await params;
 
+  // A non-uuid id would make Postgres raise 22P02 and surface as a 500, when
+  // the honest answer is that no such row exists.
+  if (!isUuid(id)) {
+    return apiError("NOT_FOUND", "No such document.", 404);
+  }
+
   try {
-    const body = await request.json();
+    const body = await readJsonObject(request);
+
+    if (!body) {
+      return apiError("INVALID_BODY", "Expected a JSON object.", 400);
+    }
+
     const { visibility, description } = body;
 
     // Validate visibility if provided
-    if (visibility && !["private", "public"].includes(visibility)) {
-      return NextResponse.json(
-        { error: "Invalid visibility value" },
-        { status: 400 }
-      );
+    if (visibility !== undefined && visibility !== "private" && visibility !== "public") {
+      return apiError("INVALID_BODY", "Visibility must be 'private' or 'public'.", 400);
+    }
+
+    if (description !== undefined && description !== null && typeof description !== "string") {
+      return apiError("INVALID_BODY", "Description must be a string or null.", 400);
     }
 
     // Update file metadata
     const updateData: Record<string, unknown> = {};
-    if (visibility) updateData.visibility = visibility;
+    if (visibility !== undefined) updateData.visibility = visibility;
     if (description !== undefined) updateData.description = description;
 
     if (Object.keys(updateData).length === 0) {
-      return NextResponse.json(
-        { error: "No fields to update" },
-        { status: 400 }
-      );
+      return apiError("INVALID_BODY", "No fields to update.", 400);
     }
 
     const { data, error } = await supabase
@@ -47,14 +57,15 @@ export async function PATCH(
       .update(updateData)
       .eq("id", id)
       .select("*")
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("File update error:", error);
-      return NextResponse.json(
-        { error: "Failed to update file" },
-        { status: 500 }
-      );
+      return apiError("SERVER_ERROR", "Could not update the document.", 500);
+    }
+
+    if (!data) {
+      return apiError("NOT_FOUND", "No such document.", 404);
     }
 
     return NextResponse.json(
@@ -63,10 +74,7 @@ export async function PATCH(
     );
   } catch (error) {
     console.error("File update error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return apiError("SERVER_ERROR", "Internal server error.", 500);
   }
 }
 
@@ -86,19 +94,25 @@ export async function DELETE(
   const { supabase } = authResult;
   const { id } = await params;
 
+  if (!isUuid(id)) {
+    return apiError("NOT_FOUND", "No such document.", 404);
+  }
+
   try {
     // Get file metadata
     const { data: fileData, error: fileError } = await supabase
       .from("files_metadata")
       .select("id, storage_path")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
-    if (fileError || !fileData) {
-      return NextResponse.json(
-        { error: "File not found" },
-        { status: 404 }
-      );
+    if (fileError) {
+      console.error("File lookup error:", fileError);
+      return apiError("SERVER_ERROR", "Could not delete the document.", 500);
+    }
+
+    if (!fileData) {
+      return apiError("NOT_FOUND", "No such document.", 404);
     }
 
     // Delete from storage
@@ -108,24 +122,15 @@ export async function DELETE(
 
     if (storageError) {
       console.error("Storage deletion error:", storageError);
-      return NextResponse.json(
-        { error: "Failed to delete file from storage" },
-        { status: 500 }
-      );
+      return apiError("STORAGE_ERROR", "Could not remove the stored file.", 500);
     }
 
     // Delete metadata from database
-    const { error: dbError } = await supabase
-      .from("files_metadata")
-      .delete()
-      .eq("id", id);
+    const { error: dbError } = await supabase.from("files_metadata").delete().eq("id", id);
 
     if (dbError) {
       console.error("Database deletion error:", dbError);
-      return NextResponse.json(
-        { error: "Failed to delete file metadata" },
-        { status: 500 }
-      );
+      return apiError("SERVER_ERROR", "Could not delete the document.", 500);
     }
 
     return NextResponse.json(
@@ -134,9 +139,6 @@ export async function DELETE(
     );
   } catch (error) {
     console.error("File deletion error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return apiError("SERVER_ERROR", "Internal server error.", 500);
   }
 }
