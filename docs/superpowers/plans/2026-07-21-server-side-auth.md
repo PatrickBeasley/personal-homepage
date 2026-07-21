@@ -311,10 +311,10 @@ describe("sendMagicLinkAction", () => {
     expect(options.shouldCreateUser).toBe(false);
   });
 
-  // Enumeration safety: an unknown address must be indistinguishable from a
-  // known one. signInWithOtp rejects unknown addresses when shouldCreateUser
-  // is false, so the rejection must not change what the user sees.
-  it("confirms identically whether or not the address exists", async () => {
+  // Enumeration safety, thrown path: a transport failure must not change what
+  // the user sees. (See the sibling test below for the path that actually
+  // occurs in production.)
+  it("confirms identically when the client throws", async () => {
     const { sendMagicLinkAction } = await import("./actions");
 
     signInWithOtp.mockResolvedValue({ error: null });
@@ -330,8 +330,41 @@ describe("sendMagicLinkAction", () => {
     expect(known).toBe(unknown);
     expect(known).toContain("sent=1");
   });
+
+  // Enumeration safety, resolved path — the one production actually takes.
+  // @supabase/auth-js catches AuthApiError internally and RESOLVES with
+  // { data, error } rather than rejecting, so a rejection-only test would pass
+  // against an implementation that reads `error` and branches on it.
+  it("confirms identically when the client resolves with an error", async () => {
+    const { sendMagicLinkAction } = await import("./actions");
+
+    signInWithOtp.mockResolvedValue({ data: {}, error: null });
+    const known = await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "known@b.com", next: "/dashboard" })),
+    );
+
+    signInWithOtp.mockResolvedValue({
+      data: {},
+      error: { message: "Signups not allowed for otp" },
+    });
+    const unknown = await callAndCaptureRedirect(() =>
+      sendMagicLinkAction(form({ email: "nobody@b.com", next: "/dashboard" })),
+    );
+
+    expect(unknown).toBe(known);
+  });
 });
 ```
+
+> **Revised during execution.** The first draft asserted that `signInWithOtp`
+> *rejects* for unknown addresses under `shouldCreateUser: false`. That is
+> false — verified against `node_modules/@supabase/auth-js/src/GoTrueClient.ts`,
+> which catches `AuthApiError` internally and resolves with `{ error }`. A
+> rejection-only test therefore guarded the wrong path: it would still pass
+> against an implementation that destructured `error` and redirected
+> differently. Both shapes are now covered. The shipped implementation was
+> safe regardless, because it never reads the resolved value — but the test
+> existed to lock that in, and it did not.
 
 - [ ] **Step 2: Run the test to verify it fails**
 
