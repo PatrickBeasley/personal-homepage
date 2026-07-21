@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code — agent worktrees are full duplicate checkouts; local settings are per-machine.
+# Deliberately not ignoring all of .claude/, so .claude/settings.json stays committable.
+.claude/worktrees/
+.claude/settings.local.json
