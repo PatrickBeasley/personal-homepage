@@ -203,17 +203,37 @@ export async function signInWithPasswordAction(formData: FormData) {
   const next = normalizeNextPath(readField(formData, "next") || null, "/dashboard");
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  // Not inside a try/catch: redirect() signals by throwing, and catching it
-  // would swallow the navigation.
-  if (error) {
+  let failed = false;
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    failed = Boolean(error);
+  } catch {
+    // A thrown transport or service failure collapses into the same outcome as
+    // a rejected credential. It cannot reveal whether an account exists, so
+    // enumeration safety is preserved.
+    failed = true;
+  }
+
+  // Outside the try on purpose: redirect() signals by throwing, and catching
+  // it would swallow the navigation.
+  if (failed) {
     redirect(`/login?error=1&next=${encodeURIComponent(next)}`);
   }
 
   redirect(next);
 }
 ```
+
+> **Revised during execution.** The first draft of this task handled Supabase
+> *returning* `{ error }` but not *throwing* — a network or service failure
+> would escape to Next's error boundary instead of reaching the login page.
+> The client code being replaced did handle that, so the original draft was a
+> robustness regression in a refactor justified by robustness. Add a matching
+> test asserting the thrown path redirects to a target **equal to** the
+> returned-error path rather than to a hardcoded string, so that giving the
+> two paths different messages later fails the test.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
