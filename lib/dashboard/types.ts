@@ -19,6 +19,10 @@ export function isCtx(value: unknown): value is Ctx {
   return value === "work" || value === "home";
 }
 
+export function isCategoryKind(value: unknown): value is CategoryKind {
+  return value === "link" || value === "note";
+}
+
 export interface Category {
   id: string;
   ctx: Ctx;

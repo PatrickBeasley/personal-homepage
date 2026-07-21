@@ -25,6 +25,11 @@ export type ApiErrorCode =
   | "INVALID_CONTENT"
   | "NOT_FOUND"
   | "CONFLICT"
+  // Settings (app/api/categories/*). Both are 409s with a reason the user can
+  // act on, which is why they are not folded into the generic CONFLICT: the
+  // remedy differs (add another category first vs. move the items off this one).
+  | "LAST_CATEGORY"
+  | "CATEGORY_IN_USE"
   | "SERVER_ERROR"
   // Documents (app/api/files/*).
   | "INVALID_FILE_TYPE"
@@ -44,6 +49,36 @@ export const LINK_COLUMNS =
 export const NOTE_COLUMNS = "id, ctx, category_id, title, content_html, created_at, updated_at";
 
 export const CATEGORY_COLUMNS = "id, ctx, kind, name, sort_order";
+
+/**
+ * Category names are chips in a fixed-width card, and the column is unbounded
+ * `text`. The cap is presentational rather than a data constraint, so it lives
+ * here (and on the input's `maxLength`) rather than in the schema.
+ */
+export const CATEGORY_NAME_MAX_LENGTH = 40;
+
+/**
+ * SQLSTATEs the category routes have to translate into 409s instead of letting
+ * them surface as 500s.
+ *
+ * `23505` is `unique (ctx, kind, name)` on `dashboard_categories`; `23503` is
+ * the `on delete restrict` foreign key from `dashboard_links`/`dashboard_notes`.
+ * Both are also checked explicitly before the write, so these only fire when a
+ * concurrent request wins the race — but "never a 500" has to hold either way.
+ */
+export const UNIQUE_VIOLATION = "23505";
+export const FOREIGN_KEY_VIOLATION = "23503";
+
+/** Reads the SQLSTATE off a PostgREST error without asserting its whole shape. */
+export function postgresErrorCode(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) {
+    return null;
+  }
+
+  const { code } = error as { code?: unknown };
+
+  return typeof code === "string" ? code : null;
+}
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -111,6 +146,54 @@ export function normalizeUrl(raw: string): string | null {
   }
 
   return parsed.toString();
+}
+
+/**
+ * Trims a user-supplied category name and confirms it is usable. Returns null
+ * for anything that is not a non-empty string within the length cap, which the
+ * caller turns into a single `INVALID_BODY` — the two failures share a remedy
+ * (type something shorter and non-blank), so they do not need separate codes.
+ */
+export function normalizeCategoryName(raw: unknown): string | null {
+  if (typeof raw !== "string") {
+    return null;
+  }
+
+  const trimmed = raw.trim();
+
+  if (!trimmed || trimmed.length > CATEGORY_NAME_MAX_LENGTH) {
+    return null;
+  }
+
+  return trimmed;
+}
+
+/**
+ * Every category in one `ctx`+`kind` list. POST needs it for the next
+ * `sort_order`; both writes need it for the case-insensitive duplicate check
+ * the design performs (design/patrick-beasley.dc.html line 608), which the
+ * database's own case-*sensitive* unique constraint would otherwise let past.
+ *
+ * Returns null when the read itself failed, so a caller can tell an empty list
+ * from a broken query rather than inventing `sort_order` 0 on an error.
+ */
+export async function listCategorySiblings(
+  supabase: DashboardSupabaseClient,
+  ctx: Ctx,
+  kind: CategoryKind
+): Promise<Category[] | null> {
+  const { data, error } = await supabase
+    .from("dashboard_categories")
+    .select(CATEGORY_COLUMNS)
+    .eq("ctx", ctx)
+    .eq("kind", kind);
+
+  if (error) {
+    console.error("Category siblings read error:", error);
+    return null;
+  }
+
+  return (data ?? []) as Category[];
 }
 
 /**
