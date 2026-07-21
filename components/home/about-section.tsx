@@ -14,15 +14,10 @@ export default function AboutSection() {
             styling is unchanged — only the tag differs.
           */}
           <h1 className="mb-[18px] font-heading text-[30px] font-semibold tracking-[-0.02em]">
-            Hi, I&rsquo;m Patrick.
+            Hiya
           </h1>
-          <p className="mb-4 max-w-[620px] text-base leading-[1.7] text-text-2" style={{ textWrap: "pretty" }}>
-            I like taking messy ideas and turning them into things that work. Most days that
-            means a code editor, a database schema, and too much coffee. When something I build
-            starts to save me time, I know it&rsquo;s worth keeping.
-          </p>
           <p className="mb-6 max-w-[620px] text-base leading-[1.7] text-text-2" style={{ textWrap: "pretty" }}>
-            This site is deliberately simple. The interesting part lives behind the login.
+            Professional programmer, amateur chef
           </p>
           <div className="flex flex-wrap gap-2">
             {STACK.map((tag) => (
