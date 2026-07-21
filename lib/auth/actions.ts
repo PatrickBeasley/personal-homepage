@@ -17,7 +17,9 @@ function readField(formData: FormData, name: string) {
  *
  * Every failure redirects to exactly one target. Supabase already returns a
  * single generic error for "no such user" and "wrong password"; this must not
- * widen that, so no branch below may depend on the kind of failure.
+ * widen that, so no branch below may depend on the kind of failure. Thrown
+ * failures (network, DNS, service down) are treated identically to returned
+ * ones for the same reason.
  */
 export async function signInWithPasswordAction(formData: FormData) {
   const email = readField(formData, "email");
@@ -25,11 +27,22 @@ export async function signInWithPasswordAction(formData: FormData) {
   const next = normalizeNextPath(readField(formData, "next") || null, "/dashboard");
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
-  // Not inside a try/catch: redirect() signals by throwing, and catching it
-  // would swallow the navigation.
-  if (error) {
+  let failed = false;
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    failed = Boolean(error);
+  } catch {
+    // A thrown transport or service failure collapses into the same outcome as
+    // a rejected credential. It cannot reveal whether an account exists, so
+    // enumeration safety is preserved.
+    failed = true;
+  }
+
+  // Outside the try on purpose: redirect() signals by throwing, and catching
+  // it would swallow the navigation.
+  if (failed) {
     redirect(`/login?error=1&next=${encodeURIComponent(next)}`);
   }
 

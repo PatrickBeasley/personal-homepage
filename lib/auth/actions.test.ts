@@ -84,6 +84,22 @@ describe("signInWithPasswordAction", () => {
     expect(wrongPassword).toContain("error=1");
   });
 
+  it("treats a thrown transport failure the same as a rejected credential", async () => {
+    const { signInWithPasswordAction } = await import("./actions");
+
+    signInWithPassword.mockResolvedValue({ error: { message: "Invalid login credentials" } });
+    const returnedError = await callAndCaptureRedirect(() =>
+      signInWithPasswordAction(form({ email: "a@b.com", password: "pw", next: "/dashboard" })),
+    );
+
+    signInWithPassword.mockRejectedValue(new Error("fetch failed"));
+    const thrownError = await callAndCaptureRedirect(() =>
+      signInWithPasswordAction(form({ email: "a@b.com", password: "pw", next: "/dashboard" })),
+    );
+
+    expect(thrownError).toBe(returnedError);
+  });
+
   it("refuses an off-site next target", async () => {
     signInWithPassword.mockResolvedValue({ error: null });
 
