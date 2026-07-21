@@ -17,6 +17,20 @@ Complete redesign of the personal site. The current Next.js 16 + Supabase site (
 - **API wire conventions (all new dashboard routes)**: JSON only. Success → the entity (or `{ok: true}` for deletes). Errors → `{error: "<MACHINE_CODE>", message: "<human text>"}` with proper status: 400 validation (`INVALID_CTX`, `INVALID_URL`, `INVALID_BODY`…), 401 unauthenticated / 403 non-admin (from `requireAdminAuth`), 404 missing row, 409 conflict (`LAST_CATEGORY`, `CATEGORY_IN_USE`, `DUPLICATE_NAME`). Every phase brief copies this verbatim so shapes don't drift.
 - **Spec = design snapshot + deviations**: behavioral detail (interactions, empty states, sort semantics, hover states) lives in `design/patrick-beasley.dc.html`, not prose. Phase briefs point implementers at the exact design lines plus the sanctioned deviations listed in this plan. Never paraphrase the design from memory.
 
+## Overnight execution order (unattended run, 2026-07-21 → 22)
+
+Everything below happens on branch `rebuild/v2` only — nothing deploys and no prod state changes overnight. **Model directive (user): Opus orchestrates and implements; do not downshift implementer subagents below Opus.**
+
+Autonomous overnight (in order): Phase 1 (full, incl. local smoke) → Phase 2 **migration file only, no push** → Phase 3 code (login page, confirm route, shell, guard, redirects; **do NOT delete the OAuth routes `app/auth/login|callback` yet** — they coexist until morning verification so a working sign-in path always exists; `app/admin` + blog APIs may be deleted as planned, it's branch-only) → Phase 4 code → Phase 5 code → Phase 6 code → Phase 7 code (settings, mobile polish, CLAUDE.md rewrite). Gates per phase: lint + tsc + build + unit tests. Runtime smoke that needs the new tables or a signed-in session is **deferred, not skipped** — record each deferred check in the morning checklist as you go.
+
+**Morning checklist (user-gated, blocked overnight):**
+1. Confirm + `supabase db push` the dashboard migration (Phase 2 gate).
+2. Supabase Studio: enable Email provider, set admin password, disable public sign-ups, leave session timebox OFF.
+3. Runtime smoke: login (password + magic link), all dashboard sections against real tables.
+4. Auth cutover: delete OAuth routes only after password login verified; then re-run gates.
+5. Decide legacy-table drop (export first) — deferrable.
+6. Vercel preview deploy + Supabase redirect-URL check.
+
 ## Phases
 
 Branch: `rebuild/v2`. Before starting: create parent tracking issue + one child issue per phase (standing rule). Every phase gates on `npm run lint` + `npx tsc --noEmit` + `npm run build` + listed smoke.
