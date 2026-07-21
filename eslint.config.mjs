@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Read-only design source snapshot (generated code, not app code)
+    "design/**",
   ]),
   {
     rules: {
