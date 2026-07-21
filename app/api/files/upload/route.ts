@@ -2,23 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
 import { requireAdminAuth } from "@/lib/auth/admin-guard";
-
-// Allowed file extensions and MIME types
-const ALLOWED_EXTENSIONS = [".pdf", ".docx", ".txt", ".md", ".sql", ".py"];
-const ALLOWED_MIMETYPES = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "text/markdown",
-  "application/x-sql",
-  "text/x-python",
-];
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+import { apiError } from "@/lib/dashboard/api";
+import {
+  ALLOWED_EXTENSIONS,
+  ALLOWED_MIMETYPES,
+  MAX_FILE_SIZE_BYTES,
+  MAX_FILE_SIZE_LABEL,
+  fileExtension,
+} from "@/lib/dashboard/files";
 
 /**
- * Handle admin file uploads.
- * Validates file extension, MIME type, and size.
- * Stores file in Supabase Storage and metadata in Postgres.
+ * POST /api/files/upload
+ *
+ * Multipart upload. Validates extension, MIME type and size, writes the bytes
+ * to Supabase Storage, then records the metadata row. The constraints are
+ * shared with the client view via lib/dashboard/files.ts; the checks below are
+ * the enforcing copy.
  */
 export async function POST(request: NextRequest) {
   // Verify admin authentication
@@ -35,40 +34,34 @@ export async function POST(request: NextRequest) {
     const description = formData.get("description") as string | null;
 
     if (!file) {
-      return NextResponse.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
+      return apiError("INVALID_BODY", "No file was provided.", 400);
     }
 
     // Validate file extension
     const fileName = file.name;
-    const extension = fileName.slice(fileName.lastIndexOf(".")).toLowerCase();
+    const extension = fileExtension(fileName);
 
     if (!ALLOWED_EXTENSIONS.includes(extension)) {
-      return NextResponse.json(
-        {
-          error: `File type not allowed. Allowed types: ${ALLOWED_EXTENSIONS.join(", ")}`,
-        },
-        { status: 400 }
+      return apiError(
+        "INVALID_FILE_TYPE",
+        `File type not allowed. Allowed types: ${ALLOWED_EXTENSIONS.join(", ")}`,
+        400
       );
     }
 
     // Validate MIME type
     if (!ALLOWED_MIMETYPES.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Invalid file MIME type" },
-        { status: 400 }
+      return apiError(
+        "INVALID_FILE_TYPE",
+        `The browser reported this file as "${file.type || "unknown"}", which is not an accepted type.`,
+        400
       );
     }
 
     // Validate file size
     const fileBuffer = await file.arrayBuffer();
     if (fileBuffer.byteLength > MAX_FILE_SIZE_BYTES) {
-      return NextResponse.json(
-        { error: `File too large. Max size: ${MAX_FILE_SIZE_BYTES / 1024 / 1024}MB` },
-        { status: 400 }
-      );
+      return apiError("FILE_TOO_LARGE", `File too large. Max size: ${MAX_FILE_SIZE_LABEL}`, 400);
     }
 
     // Generate unique storage path
@@ -84,10 +77,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error("Storage upload error:", uploadError);
-      return NextResponse.json(
-        { error: "Failed to upload file" },
-        { status: 500 }
-      );
+      return apiError("STORAGE_ERROR", "Could not store the file.", 500);
     }
 
     // Store metadata in Postgres
@@ -110,10 +100,7 @@ export async function POST(request: NextRequest) {
       console.error("Database insert error:", dbError);
       // Clean up storage if metadata insert fails
       await supabase.storage.from("files").remove([storagePath]);
-      return NextResponse.json(
-        { error: "Failed to save file metadata" },
-        { status: 500 }
-      );
+      return apiError("SERVER_ERROR", "Could not save the file details.", 500);
     }
 
     return NextResponse.json(
@@ -122,9 +109,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("File upload error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return apiError("SERVER_ERROR", "Internal server error.", 500);
   }
 }

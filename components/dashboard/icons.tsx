@@ -92,6 +92,14 @@ export function TrashIcon({ size = 15 }: { size?: number }) {
   );
 }
 
+export function DownloadIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 21h16" />
+    </svg>
+  );
+}
+
 export function MenuIcon({ size = 20 }: { size?: number }) {
   return (
     <svg {...base} width={size} height={size}>

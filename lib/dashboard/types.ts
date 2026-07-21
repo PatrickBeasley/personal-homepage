@@ -38,3 +38,25 @@ export interface LinkItem {
   created_at: string;
   updated_at: string;
 }
+
+/**
+ * A row of `files_metadata`, as returned by `GET /api/files` and read directly
+ * by the Documents page.
+ *
+ * Note what is absent: there is **no `ctx`**. `files_metadata` has no such
+ * column and documents are not workspace-scoped — one flat list is shown
+ * identically in Work and Home. Do not add workspace filtering here.
+ *
+ * `storage_path` and `uploaded_by` exist on the table but are not part of the
+ * list contract; see `FILE_COLUMNS` in lib/dashboard/files.ts.
+ */
+export interface DocumentItem {
+  id: string;
+  file_name: string;
+  file_extension: string | null;
+  mime_type: string | null;
+  file_size_bytes: number;
+  description: string | null;
+  visibility: "private" | "public";
+  created_at: string;
+}

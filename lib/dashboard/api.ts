@@ -20,7 +20,11 @@ export type ApiErrorCode =
   | "INVALID_CATEGORY"
   | "NOT_FOUND"
   | "CONFLICT"
-  | "SERVER_ERROR";
+  | "SERVER_ERROR"
+  // Documents (app/api/files/*).
+  | "INVALID_FILE_TYPE"
+  | "FILE_TOO_LARGE"
+  | "STORAGE_ERROR";
 
 export function apiError(error: ApiErrorCode, message: string, status: number) {
   return NextResponse.json({ error, message }, { status });

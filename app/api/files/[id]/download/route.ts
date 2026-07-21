@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireAdminAuth } from "@/lib/auth/admin-guard";
+import { apiError, isUuid } from "@/lib/dashboard/api";
 
 /**
  * GET /api/files/[id]/download
- * Generate a signed download URL for a file.
- * Only admin can access this endpoint.
+ *
+ * Returns a 1-hour signed storage URL as JSON — it does not redirect, so the
+ * caller is expected to fetch the URL itself.
  */
 export async function GET(
   request: NextRequest,
@@ -19,19 +21,25 @@ export async function GET(
   const { supabase } = authResult;
   const { id } = await params;
 
+  if (!isUuid(id)) {
+    return apiError("NOT_FOUND", "No such document.", 404);
+  }
+
   try {
     // Get file metadata
     const { data: fileData, error: fileError } = await supabase
       .from("files_metadata")
       .select("id, storage_path, file_name")
       .eq("id", id)
-      .single();
+      .maybeSingle();
 
-    if (fileError || !fileData) {
-      return NextResponse.json(
-        { error: "File not found" },
-        { status: 404 }
-      );
+    if (fileError) {
+      console.error("File lookup error:", fileError);
+      return apiError("SERVER_ERROR", "Could not prepare the download.", 500);
+    }
+
+    if (!fileData) {
+      return apiError("NOT_FOUND", "No such document.", 404);
     }
 
     // Generate signed URL (valid for 1 hour)
@@ -39,12 +47,9 @@ export async function GET(
       .from("files")
       .createSignedUrl(fileData.storage_path, 3600);
 
-    if (urlError) {
+    if (urlError || !data) {
       console.error("Signed URL generation error:", urlError);
-      return NextResponse.json(
-        { error: "Failed to generate download URL" },
-        { status: 500 }
-      );
+      return apiError("STORAGE_ERROR", "Could not prepare the download.", 500);
     }
 
     // Update last_downloaded_at
@@ -62,9 +67,6 @@ export async function GET(
     );
   } catch (error) {
     console.error("Download URL generation error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return apiError("SERVER_ERROR", "Internal server error.", 500);
   }
 }
