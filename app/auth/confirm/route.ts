@@ -13,9 +13,10 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
  * returns the user to `emailRedirectTo` with `?code=`, not a `token_hash`,
  * so this route completes the sign-in with `exchangeCodeForSession` — the
  * same API the OAuth callback uses. The matching code verifier was written
- * to a cookie by the browser client (`cookies.js` applies storage as soon as
- * it sees a `-code-verifier` key), which is what lets the server finish an
- * exchange the browser started.
+ * to a cookie by the server client in `sendMagicLinkAction` (`cookies.js`
+ * applies storage as soon as it sees a `-code-verifier` key), which is what
+ * lets this later, separate request finish the exchange that request
+ * started.
  */
 function loginRedirect(origin: string, code: string, next: string) {
   const url = new URL("/login", origin);

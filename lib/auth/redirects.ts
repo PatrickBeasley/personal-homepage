@@ -12,14 +12,23 @@ export function getRequestOrigin(request: NextRequest) {
 }
 
 export function normalizeNextPath(input: string | null, fallback = "/") {
-  if (!input) {
+  if (!input || !input.startsWith("/")) {
     return fallback;
   }
 
-  // Only allow relative in-app paths to avoid open redirect issues.
-  if (!input.startsWith("/") || input.startsWith("//")) {
+  // Validate by resolving against a fixed origin and confirming it stayed
+  // there. Prefix checks are not enough: browsers normalise backslashes to
+  // forward slashes, so "/\evil.com" resolves to "//evil.com" and lands on
+  // another host while passing any startsWith("//") test.
+  try {
+    const probe = new URL(input, "https://validate.invalid");
+
+    if (probe.origin !== "https://validate.invalid") {
+      return fallback;
+    }
+
+    return `${probe.pathname}${probe.search}${probe.hash}`;
+  } catch {
     return fallback;
   }
-
-  return input;
 }

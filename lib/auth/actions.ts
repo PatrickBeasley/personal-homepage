@@ -8,7 +8,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 function readField(formData: FormData, name: string) {
   const value = formData.get(name);
-  return typeof value === "string" ? value : "";
+  return typeof value === "string" ? value.trim() : "";
 }
 
 /**
@@ -63,7 +63,7 @@ export async function signInWithPasswordAction(formData: FormData) {
  * link-poisoning vector.
  */
 export async function sendMagicLinkAction(formData: FormData) {
-  const email = readField(formData, "email").trim();
+  const email = readField(formData, "email");
   const next = normalizeNextPath(readField(formData, "next") || null, "/dashboard");
 
   if (email) {

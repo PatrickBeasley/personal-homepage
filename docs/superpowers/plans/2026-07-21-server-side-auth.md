@@ -744,6 +744,9 @@ The deliverable of this task is a filled-in result for each row, not code.
 | Unknown address | **identical** to wrong password |
 | Magic link, known address | "Check your email", email arrives |
 | Magic link, unknown address | **identical** confirmation, no email |
+| Magic link, click the emailed link | lands signed in on `next` |
+
+The last row is the actual completion of the magic-link sign-in — the PKCE code verifier this exchange needs is now written by the server client (not the browser client), so this row is what exercises that handoff. It must pass here **and** again under Step 2 with JavaScript disabled; do not consider magic link accepted until both runs land signed in.
 
 - [ ] **Step 2: With JavaScript DISABLED — the acceptance criterion**
 
