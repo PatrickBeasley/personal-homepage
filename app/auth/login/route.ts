@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (user) {
-    const destination = isAdminEmail(user.email) && next === "/" ? "/admin" : next;
+    const destination = isAdminEmail(user.email) && next === "/" ? "/dashboard" : next;
     return NextResponse.redirect(new URL(destination, origin));
   }
 
