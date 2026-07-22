@@ -46,6 +46,10 @@ export function useDragReorder({ count, enabled, onCommit }: DragReorderOptions)
   const registerRow = useCallback((index: number, element: HTMLElement | null) => {
     if (element) {
       rowsRef.current[index] = element;
+    } else {
+      // Clear on unmount so a shrinking list leaves no stale trailing rows for
+      // the hit-test to measure. The move loop skips holes (`if (!row)`).
+      delete rowsRef.current[index];
     }
   }, []);
 
@@ -148,12 +152,23 @@ export function useDragReorder({ count, enabled, onCommit }: DragReorderOptions)
   );
 
   const getRowProps = useCallback(
-    (index: number) => ({
-      ref: (element: HTMLElement | null) => registerRow(index, element),
-      "data-dragging": dragIndex === index ? "true" : undefined,
-      "data-drop-target": overIndex === index && dragIndex !== index ? "true" : undefined,
-    }),
-    [dragIndex, overIndex, registerRow]
+    (index: number) => {
+      // Symmetric with getHandleProps: register nothing when drag is off. This
+      // is what keeps the grouped/filtered case safe by construction rather than
+      // by luck — those views render a subset with per-group indices, and
+      // populating rowsRef with them would misalign the hit-test if drag were
+      // ever enabled there. Off means no ref, no measurement, no hazard.
+      if (!enabled) {
+        return {};
+      }
+
+      return {
+        ref: (element: HTMLElement | null) => registerRow(index, element),
+        "data-dragging": dragIndex === index ? "true" : undefined,
+        "data-drop-target": overIndex === index && dragIndex !== index ? "true" : undefined,
+      };
+    },
+    [enabled, dragIndex, overIndex, registerRow]
   );
 
   return { dragIndex, overIndex, getHandleProps, getRowProps };
