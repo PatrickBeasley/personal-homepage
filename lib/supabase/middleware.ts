@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { verifyClaims } from "@/lib/auth/claims";
 import { getSupabasePublicEnv } from "@/lib/env";
 
 export async function updateSession(request: NextRequest) {
@@ -29,7 +30,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  // Verifies the JWT locally against the cached JWKS instead of calling
+  // /auth/v1/user over the network. Session refresh is preserved: with no jwt
+  // argument getClaims() calls getSession() internally, which refreshes an
+  // expiring token and fires the setAll cookie callback above.
+  await verifyClaims(supabase);
 
   return response;
 }
