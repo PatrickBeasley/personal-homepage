@@ -119,47 +119,43 @@ round trip and render visibly. The persistence half is expected to already pass.
 
 ---
 
-## 3. Notes card sizing on desktop
+## 3. Notes editor focus box on desktop
 
 ### Diagnosis
 
-The reporting screenshot was never available. Diagnosed instead against the
-behavioural spec, `design/patrick-beasley.dc.html`.
+**Confirmed from the owner's screenshot (2026-07-22).** The earlier card-height
+hypothesis — diagnosed blind against the design spec — was wrong and is superseded.
 
-The design's Notes card (line 303) is `display:grid; min-height:360px` with
-`grid-template-columns` resolving to `minmax(180px,240px) 1fr` (line 810). Both
-panes are `flex:1` with `overflow:auto`. The design sets **no `max-height`
-anywhere** in the card.
+What "not sized properly" actually names is the editor's **focus outline**. The
+`contenteditable` at `components/dashboard/notes/notes-view.tsx:769` deliberately
+carries no `outline-none` (comment at `:766-768`), so a focused editor draws the
+browser's default focus ring: a thick, high-contrast blue box around the whole
+editable region. On the dark surface it reads as a mis-sized heavy blue border.
 
-The implementation added `max-h-[460px]` to the list pane
-(`components/dashboard/notes/notes-view.tsx:601`), which has no counterpart in the
-design. The editor pane (line 769) is `min-h-[200px] flex-1` and unbounded. So as a
-note's body grows, the editor column stretches the card without limit while the list
-column hard-stops at 460 px — the two columns desynchronize and leave dead space
-beside a card that grows unboundedly tall.
+Shown the screenshot, the owner confirmed the issue is the blue border alone —
+**not** the card height, not the empty space below a short note, not the two
+columns' relative heights. Those are explicitly out of scope.
 
 ### Change
 
-Bound the **card**, not the pane:
+One className change on the editor `<div>`. Add `outline-none` to drop the browser
+default, and a soft inset focus ring in `accent-soft`
+(`focus:shadow-[inset_0_0_0_2px_var(--color-accent-soft)]`) so a focused editor
+still shows a gentle, on-brand cue instead of a solid blue box.
 
-- Replace `min-h-[360px]` on the grid (`notes-view.tsx:544`) with a fixed
-  `h-[520px]`, matching the 520 px scroll cap the Links card already uses so the two
-  cards agree on desktop.
-- Drop `max-h-[460px]` from the list pane (`notes-view.tsx:601`).
-- Give both columns `min-h-0` with `overflow: auto` so they scroll independently
-  inside a stable container — which is what the design's `flex:1` + `overflow:auto`
-  intends.
+`:focus`, not `:focus-visible`: a `contenteditable` matches `:focus-visible` on a
+mouse click too, so a focus-visible-only style would leave the heavy box in place
+for the exact mouse interaction in the screenshot. The token-driven ring also picks
+up the green Home accent under `[data-ctx="home"]` for free.
 
-`min-h-0` is load-bearing: a grid child defaults to `min-height: auto` and will
-refuse to shrink below its content, which would reintroduce the unbounded growth
-this change exists to remove.
+The card height, the list pane's `max-h`, and the column `min-h` are left untouched.
 
 ### Verification
 
-**This one is a hypothesis, not a confirmed root cause**, because the visual report
-was never seen. Confirm against the running app at desktop width before and after,
-with both a short note and a long one. If the observed symptom is something else,
-revisit rather than shipping this change on its own reasoning.
+This is a visual fix and must be confirmed in the running app, not by the build:
+mouse-click focus shows a faint accent edge (no solid box), keyboard focus still
+shows a visible cue (accessibility), and the ring follows the workspace accent.
+Deferred to a live check, recorded rather than claimed.
 
 ---
 
