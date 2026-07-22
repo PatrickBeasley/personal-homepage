@@ -36,6 +36,11 @@ site owner makes. For a signed-in user each page load runs two sequential networ
 1. `lib/supabase/middleware.ts:32` — via `proxy.ts`, on every matched request
 2. `lib/auth/user-context.ts:16` — via `app/dashboard/layout.tsx:20`
 
+A **third** call site was found while writing the implementation plan and is
+folded into the same change: `lib/auth/admin-guard.ts:18` calls `getUser()` too,
+so every one of the 27 API routes behind `requireAdminAuth` pays the round trip
+as well. This matters most for Links, whose drag reorder is chatty.
+
 Supabase auth endpoint latency measured at 125–260 ms per call. These are
 sequential (middleware, then layout, then page), so ~250–500 ms of pure auth
 overhead precedes every navigation. This explains why *all* the reported surfaces
