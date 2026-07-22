@@ -39,6 +39,11 @@ export interface LinkItem {
   url: string;
   description: string | null;
   sort_order: number;
+  /**
+   * Pinned links render in a band above every other link in the workspace,
+   * independently of the active sort.
+   */
+  pinned: boolean;
   created_at: string;
   updated_at: string;
 }

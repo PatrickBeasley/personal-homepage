@@ -171,6 +171,7 @@ export default function LinksView({
       url,
       description: null,
       sort_order: 0,
+      pinned: false,
       created_at: now,
       updated_at: now,
     };
