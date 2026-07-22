@@ -763,10 +763,16 @@ export default function NotesView({
                 data-ph="Start writing… spellcheck is on."
                 onInput={handleEditorInput}
                 onBlur={() => flushPending()}
-                // No `outline-none`: this is the only focusable region with no
-                // border of its own, so the browser's focus ring is the sole
-                // indication a keyboard user is inside it.
-                className="min-h-[200px] flex-1 overflow-auto px-[18px] py-[18px] text-[15px] leading-[1.7] text-text"
+                // The editor is the only focusable region with no border of its
+                // own, so it still needs a focus affordance — but the browser
+                // default draws a heavy, high-contrast blue box that reads as a
+                // mis-sized border. `outline-none` drops that; the soft inset
+                // accent ring keeps a gentle, on-brand cue for both mouse and
+                // keyboard focus. It must sit on `:focus`, not `:focus-visible`:
+                // a contenteditable matches `:focus-visible` on a mouse click
+                // too, so a focus-visible-only rule would leave the heavy box in
+                // place for exactly that interaction.
+                className="min-h-[200px] flex-1 overflow-auto px-[18px] py-[18px] text-[15px] leading-[1.7] text-text outline-none focus:shadow-[inset_0_0_0_2px_var(--color-accent-soft)]"
               />
             </div>
           ) : (
