@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { isAdminEmail } from "@/lib/auth/admin";
+import { verifyClaims } from "@/lib/auth/claims";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
@@ -12,12 +13,9 @@ export async function requireAdminAuth(_request: NextRequest) {
   try {
     const supabase = await createServerSupabaseClient();
 
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const claims = await verifyClaims(supabase);
 
-    if (error || !user) {
+    if (!claims) {
       return {
         error: NextResponse.json(
           { error: "UNAUTHENTICATED", message: "No authenticated session." },
@@ -26,7 +24,7 @@ export async function requireAdminAuth(_request: NextRequest) {
       };
     }
 
-    if (!isAdminEmail(user.email)) {
+    if (!isAdminEmail(claims.email)) {
       return {
         error: NextResponse.json(
           { error: "FORBIDDEN", message: "Admin access required." },
@@ -35,7 +33,9 @@ export async function requireAdminAuth(_request: NextRequest) {
       };
     }
 
-    return { user, supabase };
+    // `user` keeps its shape for app/api/files/upload/route.ts:94, which reads
+    // `user.id` for the `uploaded_by` column.
+    return { user: { id: claims.id, email: claims.email }, supabase };
   } catch (err) {
     console.error("Admin auth guard error:", err);
     return {
