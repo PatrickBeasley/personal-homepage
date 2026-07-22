@@ -119,6 +119,15 @@ export async function PATCH(request: NextRequest) {
       .eq("id", row.id);
 
     if (updateError) {
+      // Honest limitation: these per-row updates are NOT wrapped in a single
+      // transaction, so a failure here can leave the list half-renumbered —
+      // the rows before this one are already updated, the rest are not, and
+      // the client receives a 500 without the resulting order. It is
+      // self-recoverable (re-issuing the same reorder converges the list, and
+      // the client rolls its optimistic state back on this 500), and the batch
+      // is capped at MAX_REORDER_ROWS, so the blast radius is bounded. Making
+      // the batch atomic needs a Postgres function (a single UPDATE ... FROM
+      // over the batch); deferred as an owner decision rather than assumed.
       console.error("Link reorder write error:", updateError);
       return apiError("SERVER_ERROR", "Could not save the new order.", 500);
     }
