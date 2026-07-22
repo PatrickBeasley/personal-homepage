@@ -18,6 +18,7 @@ interface LinkUpdate {
   url?: string;
   description?: string | null;
   category_id?: string;
+  pinned?: boolean;
 }
 
 /**
@@ -114,6 +115,14 @@ export async function PATCH(
     }
 
     updates.category_id = body.category_id;
+  }
+
+  if ("pinned" in body) {
+    if (typeof body.pinned !== "boolean") {
+      return apiError("INVALID_BODY", "pinned must be a boolean.", 400);
+    }
+
+    updates.pinned = body.pinned;
   }
 
   if (Object.keys(updates).length === 0) {
