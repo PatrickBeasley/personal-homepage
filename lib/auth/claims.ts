@@ -1,3 +1,5 @@
+import type { JWK } from "@supabase/supabase-js";
+
 import { getCachedJwks } from "@/lib/auth/jwks";
 import { getSupabasePublicEnv } from "@/lib/env";
 
@@ -16,7 +18,7 @@ export interface ClaimsCapableClient {
   auth: {
     getClaims: (
       jwt?: string,
-      options?: { jwks?: { keys: unknown[] } }
+      options?: { jwks?: { keys: JWK[] } }
     ) => Promise<{ data: unknown; error: unknown }>;
   };
 }

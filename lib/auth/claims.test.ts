@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { getCachedJwks } from "@/lib/auth/jwks";
 
 import { verifyClaims } from "./claims";
 
@@ -10,8 +12,10 @@ vi.mock("@/lib/env", () => ({
 }));
 
 vi.mock("@/lib/auth/jwks", () => ({
-  getCachedJwks: async () => ({ keys: [{ kid: "abc" }] }),
+  getCachedJwks: vi.fn(),
 }));
+
+const mockedGetCachedJwks = vi.mocked(getCachedJwks);
 
 function clientReturning(result: unknown) {
   const getClaims = vi.fn().mockResolvedValue(result);
@@ -19,6 +23,10 @@ function clientReturning(result: unknown) {
 }
 
 describe("verifyClaims", () => {
+  beforeEach(() => {
+    mockedGetCachedJwks.mockResolvedValue({ keys: [{ kid: "abc" }] } as never);
+  });
+
   it("returns id and email from verified claims", async () => {
     const { client } = clientReturning({
       data: { claims: { sub: "user-1", email: "Admin@Example.com" } },
@@ -42,6 +50,19 @@ describe("verifyClaims", () => {
     expect(getClaims).toHaveBeenCalledWith(undefined, {
       jwks: { keys: [{ kid: "abc" }] },
     });
+  });
+
+  it("omits the options argument entirely when there is no cached key set", async () => {
+    mockedGetCachedJwks.mockResolvedValue(null);
+
+    const { client, getClaims } = clientReturning({
+      data: { claims: { sub: "user-1", email: "a@b.c" } },
+      error: null,
+    });
+
+    await verifyClaims(client as never);
+
+    expect(getClaims).toHaveBeenCalledWith(undefined, undefined);
   });
 
   it("returns null when verification errors", async () => {
