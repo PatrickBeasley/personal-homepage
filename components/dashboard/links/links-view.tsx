@@ -2,14 +2,29 @@
 
 import { useId, useMemo, useState } from "react";
 
-import { LinkIcon, SearchIcon, TrashIcon } from "@/components/dashboard/icons";
+import {
+  GripIcon,
+  LinkIcon,
+  PinIcon,
+  SearchIcon,
+  TrashIcon,
+} from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
+import { useDragReorder } from "@/components/dashboard/links/use-drag-reorder";
 import { useWorkspace } from "@/components/dashboard/workspace-context";
+import { CATEGORY_NAME_MAX_LENGTH } from "@/lib/dashboard/api";
+import {
+  compareLinks,
+  computeReorder,
+  groupByCategory,
+  partitionPinned,
+  type LinkGroup,
+  type LinkSortKey,
+} from "@/lib/dashboard/link-order";
 import type { Category, LinkItem } from "@/lib/dashboard/types";
 
-type SortKey = "recent" | "alpha" | "category";
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+const SORT_OPTIONS: { value: LinkSortKey; label: string }[] = [
+  { value: "manual", label: "Manual" },
   { value: "recent", label: "Recent" },
   { value: "alpha", label: "A–Z" },
   { value: "category", label: "Category" },
@@ -20,6 +35,9 @@ const INPUT_CLASS =
 
 const CONTROL_CLASS =
   "h-9 rounded-[9px] border border-border-2 bg-surface-2 px-[10px] text-[13px] text-text";
+
+/** Sentinel `<option>` value; never a real category id, which is always a uuid. */
+const NEW_CATEGORY_VALUE = "__new__";
 
 /**
  * Marks a row that exists only in local state while its POST is in flight.
@@ -63,9 +81,107 @@ async function readApiError(response: Response, fallback: string): Promise<strin
   return fallback;
 }
 
+function LinkRow({
+  link,
+  categoryName,
+  draggable,
+  onTogglePin,
+  onDelete,
+  dragHandleProps,
+  rowProps,
+}: {
+  link: LinkItem;
+  categoryName: string;
+  draggable: boolean;
+  onTogglePin: (link: LinkItem) => void;
+  onDelete: (link: LinkItem) => void;
+  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  // `React.HTMLAttributes` does not admit `data-*` keys, so the index signature
+  // is what lets the hook's data-dragging / data-drop-target flags typecheck.
+  rowProps?: React.HTMLAttributes<HTMLLIElement> & {
+    ref?: (element: HTMLElement | null) => void;
+    [key: `data-${string}`]: string | undefined;
+  };
+}) {
+  const optimistic = link.id.startsWith(OPTIMISTIC_PREFIX);
+
+  return (
+    <li
+      {...rowProps}
+      className="flex items-center gap-3 border-b border-border px-5 py-[13px] hover:bg-surface-2 data-[dragging=true]:opacity-40 data-[drop-target=true]:border-t-2 data-[drop-target=true]:border-t-accent"
+    >
+      {draggable ? (
+        <button
+          type="button"
+          // `touch-action: none` is load-bearing: without it the browser claims
+          // the gesture for scrolling before the pointer handlers ever see it.
+          style={{ touchAction: "none" }}
+          aria-label={`Reorder ${link.title}`}
+          title="Drag to reorder"
+          className="grid h-[30px] w-[22px] flex-none cursor-grab place-items-center rounded text-muted hover:text-text active:cursor-grabbing"
+          {...dragHandleProps}
+        >
+          <GripIcon />
+        </button>
+      ) : null}
+
+      <span
+        aria-hidden="true"
+        className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[9px] bg-accent-soft font-mono text-xs font-semibold text-accent"
+      >
+        {(link.title[0] ?? "?").toUpperCase()}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block truncate text-sm font-semibold text-text hover:text-accent"
+        >
+          {link.title}
+        </a>
+        <span className="block truncate font-mono text-[11px] text-muted">
+          {hostLabel(link.url)}
+        </span>
+      </div>
+
+      <span className="whitespace-nowrap rounded-[20px] border border-border bg-surface-2 px-[9px] py-[3px] text-[11px] text-text-2">
+        {categoryName}
+      </span>
+
+      <button
+        type="button"
+        onClick={() => onTogglePin(link)}
+        disabled={optimistic}
+        aria-pressed={link.pinned}
+        aria-label={link.pinned ? `Unpin ${link.title}` : `Pin ${link.title}`}
+        title={link.pinned ? "Unpin" : "Pin to top"}
+        className={[
+          "grid h-[30px] w-[30px] flex-none cursor-pointer place-items-center rounded-lg border border-border bg-transparent disabled:cursor-not-allowed disabled:opacity-50",
+          link.pinned ? "text-accent" : "text-muted hover:text-text",
+        ].join(" ")}
+      >
+        <PinIcon />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onDelete(link)}
+        disabled={optimistic}
+        aria-label={`Delete ${link.title}`}
+        title="Delete"
+        className="grid h-[30px] w-[30px] flex-none cursor-pointer place-items-center rounded-lg border border-border bg-transparent text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <TrashIcon />
+      </button>
+    </li>
+  );
+}
+
 export default function LinksView({
   initialLinks,
-  categories,
+  categories: initialCategories,
 }: {
   initialLinks: LinkItem[];
   categories: Category[];
@@ -81,7 +197,17 @@ export default function LinksView({
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [sort, setSort] = useState<SortKey>("recent");
+  // Manual is the default: it is the only order the user controls, and the
+  // migration backfilled it to match what "Recent" showed before.
+  const [sort, setSort] = useState<LinkSortKey>("manual");
+  const [grouped, setGrouped] = useState(false);
+
+  // Seeded from the server prop, then owned locally so a category created from
+  // this page appears without a reload.
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [draftCategoryName, setDraftCategoryName] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
 
   const formId = useId();
   const searchId = useId();
@@ -90,6 +216,7 @@ export default function LinksView({
   const titleId = useId();
   const urlId = useId();
   const draftCategoryFieldId = useId();
+  const newCategoryFieldId = useId();
 
   // Both workspaces are already in memory, so switching is a re-filter — no refetch.
   const workspaceCategories = useMemo(
@@ -127,24 +254,20 @@ export default function LinksView({
 
     return links
       .filter((link) => link.ctx === workspace)
-      .filter(
-        (link) => !needle || `${link.title}${link.url}`.toLowerCase().includes(needle)
-      )
+      .filter((link) => !needle || `${link.title}${link.url}`.toLowerCase().includes(needle))
       .filter((link) => activeFilter === "all" || link.category_id === activeFilter)
-      .sort((a, b) => {
-        if (sort === "alpha") {
-          return a.title.localeCompare(b.title);
-        }
-
-        if (sort === "category") {
-          return (categoryNames.get(a.category_id) ?? "").localeCompare(
-            categoryNames.get(b.category_id) ?? ""
-          );
-        }
-
-        return b.created_at.localeCompare(a.created_at);
-      });
+      .sort((a, b) => compareLinks(a, b, sort, categoryNames));
   }, [links, workspace, query, activeFilter, sort, categoryNames]);
+
+  // Pinning wins over the active sort, so the band is split off after sorting.
+  const { pinned, rest } = useMemo(() => partitionPinned(visibleLinks), [visibleLinks]);
+
+  // Grouping is a view toggle, not a sort: it sections whatever `rest` already
+  // holds, so the active sort still decides the order inside each section.
+  const groups: LinkGroup[] = useMemo(
+    () => (grouped ? groupByCategory(rest, categoryNames) : [{ key: "all", label: "", links: rest }]),
+    [grouped, rest, categoryNames]
+  );
 
   async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -171,6 +294,7 @@ export default function LinksView({
       url,
       description: null,
       sort_order: 0,
+      pinned: false,
       created_at: now,
       updated_at: now,
     };
@@ -213,6 +337,46 @@ export default function LinksView({
     }
   }
 
+  async function handleAddCategory(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const name = draftCategoryName.trim();
+
+    if (!name || savingCategory) {
+      return;
+    }
+
+    setSavingCategory(true);
+
+    try {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ctx: workspace, kind: "link", name }),
+      });
+
+      if (!response.ok) {
+        // A 409 already carries a usable message ("X already exists in this
+        // list"), so it is surfaced verbatim rather than replaced.
+        throw new Error(await readApiError(response, "Could not add the category."));
+      }
+
+      const created: Category = await response.json();
+
+      // Not optimistic: the server assigns sort_order and rejects duplicates,
+      // so there is nothing useful to guess.
+      setCategories((previous) => [...previous, created]);
+      setDraftCategoryId(created.id);
+      setDraftCategoryName("");
+      setAddingCategory(false);
+      showToast(`Added "${created.name}"`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not add the category.");
+    } finally {
+      setSavingCategory(false);
+    }
+  }
+
   async function handleDelete(target: LinkItem) {
     setLinks((previous) => previous.filter((link) => link.id !== target.id));
 
@@ -231,6 +395,87 @@ export default function LinksView({
       showToast(error instanceof Error ? error.message : "Could not delete the link.");
     }
   }
+
+  async function handleTogglePin(target: LinkItem) {
+    const next = !target.pinned;
+    // Optimistic, with the previous value captured for the rollback closure —
+    // the same shape handleAdd and handleDelete already use.
+    setLinks((previous) =>
+      previous.map((link) => (link.id === target.id ? { ...link, pinned: next } : link))
+    );
+
+    try {
+      const response = await fetch(`/api/links/${target.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pinned: next }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response, "Could not update the link."));
+      }
+    } catch (error) {
+      setLinks((previous) =>
+        previous.map((link) =>
+          link.id === target.id ? { ...link, pinned: target.pinned } : link
+        )
+      );
+      showToast(error instanceof Error ? error.message : "Could not update the link.");
+    }
+  }
+
+  async function handleReorder(fromIndex: number, toIndex: number) {
+    const order = computeReorder(rest, fromIndex, toIndex);
+
+    if (order.length === 0) {
+      return;
+    }
+
+    const previousLinks = links;
+    const byId = new Map(order.map((entry) => [entry.id, entry.sort_order]));
+
+    setLinks((current) =>
+      current.map((link) =>
+        byId.has(link.id) ? { ...link, sort_order: byId.get(link.id)! } : link
+      )
+    );
+
+    try {
+      const response = await fetch("/api/links/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response, "Could not save the new order."));
+      }
+
+      // Replace optimistic positions with what was actually stored.
+      const { links: saved }: { links: LinkItem[] } = await response.json();
+      const savedById = new Map(saved.map((link) => [link.id, link]));
+
+      setLinks((current) => current.map((link) => savedById.get(link.id) ?? link));
+    } catch (error) {
+      setLinks(previousLinks);
+      showToast(error instanceof Error ? error.message : "Could not save the new order.");
+    }
+  }
+
+  // `rest` is narrowed by the category filter (`activeFilter`) before drag ever
+  // sees it, same as grouping and search narrow it. If a specific category is
+  // selected, `computeReorder` would only renumber that subset to sort_order
+  // 1..N and the PATCH would persist just those ids, leaving every link
+  // outside the filter with a stale sort_order — the corrupted-order hazard
+  // this guard exists to prevent. Only "all" (no category filter) keeps
+  // `rest`'s indices mapped 1:1 onto the full manual order.
+  const dragEnabled = sort === "manual" && !grouped && !query.trim() && activeFilter === "all";
+
+  const { getHandleProps, getRowProps } = useDragReorder({
+    count: rest.length,
+    enabled: dragEnabled,
+    onCommit: handleReorder,
+  });
 
   return (
     <section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow">
@@ -292,7 +537,14 @@ export default function LinksView({
           <select
             id={draftCategoryFieldId}
             value={activeDraftCategoryId}
-            onChange={(event) => setDraftCategoryId(event.target.value)}
+            onChange={(event) => {
+              if (event.target.value === NEW_CATEGORY_VALUE) {
+                setAddingCategory(true);
+                return;
+              }
+
+              setDraftCategoryId(event.target.value);
+            }}
             className={INPUT_CLASS}
           >
             {workspaceCategories.map((category) => (
@@ -300,6 +552,7 @@ export default function LinksView({
                 {category.name}
               </option>
             ))}
+            <option value={NEW_CATEGORY_VALUE}>+ New category…</option>
           </select>
 
           <button
@@ -308,6 +561,44 @@ export default function LinksView({
             className="h-[38px] cursor-pointer rounded-[9px] px-4 text-sm font-semibold text-white bg-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             Save
+          </button>
+        </form>
+      ) : null}
+
+      {addingCategory ? (
+        <form
+          onSubmit={handleAddCategory}
+          className="flex items-center gap-[10px] border-b border-border bg-surface-2 px-5 py-3"
+        >
+          <label htmlFor={newCategoryFieldId} className="sr-only">
+            New category name
+          </label>
+          <input
+            id={newCategoryFieldId}
+            value={draftCategoryName}
+            onChange={(event) => setDraftCategoryName(event.target.value)}
+            placeholder="Category name"
+            maxLength={CATEGORY_NAME_MAX_LENGTH}
+            autoFocus
+            required
+            className={`${INPUT_CLASS} min-w-0 flex-1`}
+          />
+          <button
+            type="submit"
+            disabled={savingCategory}
+            className="h-[38px] cursor-pointer rounded-[9px] bg-accent px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAddingCategory(false);
+              setDraftCategoryName("");
+            }}
+            className="h-[38px] cursor-pointer rounded-[9px] border border-border bg-transparent px-4 text-sm text-text-2"
+          >
+            Cancel
           </button>
         </form>
       ) : null}
@@ -356,7 +647,7 @@ export default function LinksView({
         <select
           id={sortId}
           value={sort}
-          onChange={(event) => setSort(event.target.value as SortKey)}
+          onChange={(event) => setSort(event.target.value as LinkSortKey)}
           className={CONTROL_CLASS}
         >
           {SORT_OPTIONS.map((option) => (
@@ -365,6 +656,16 @@ export default function LinksView({
             </option>
           ))}
         </select>
+
+        <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-[9px] border border-border-2 bg-surface-2 px-[10px] text-[13px] text-text">
+          <input
+            type="checkbox"
+            checked={grouped}
+            onChange={(event) => setGrouped(event.target.checked)}
+            className="h-3.5 w-3.5 accent-[var(--accent)]"
+          />
+          Group
+        </label>
       </div>
 
       <div className="max-h-[520px] flex-1 overflow-auto">
@@ -373,52 +674,53 @@ export default function LinksView({
             No links yet. Add your first one ↑
           </p>
         ) : (
-          <ul className="list-none">
-            {visibleLinks.map((link) => (
-              <li
-                key={link.id}
-                className="flex items-center gap-3 border-b border-border px-5 py-[13px] hover:bg-surface-2"
-              >
-                <span
-                  aria-hidden="true"
-                  className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[9px] bg-accent-soft font-mono text-xs font-semibold text-accent"
-                >
-                  {(link.title[0] ?? "?").toUpperCase()}
-                </span>
+          <>
+            {pinned.length > 0 ? (
+              <div>
+                <h3 className="flex items-center gap-1.5 border-b border-border bg-surface-2 px-5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">
+                  <PinIcon />
+                  Pinned
+                </h3>
+                <ul className="list-none">
+                  {pinned.map((link) => (
+                    <LinkRow
+                      key={link.id}
+                      link={link}
+                      categoryName={categoryNames.get(link.category_id) ?? "Uncategorized"}
+                      draggable={false}
+                      onTogglePin={handleTogglePin}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
-                <div className="min-w-0 flex-1">
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    // The design omits rel; opener access and referrer leakage
-                    // are not worth inheriting from a mockup.
-                    rel="noopener noreferrer"
-                    className="block truncate text-sm font-semibold text-text hover:text-accent"
-                  >
-                    {link.title}
-                  </a>
-                  <span className="block truncate font-mono text-[11px] text-muted">
-                    {hostLabel(link.url)}
-                  </span>
-                </div>
-
-                <span className="whitespace-nowrap rounded-[20px] border border-border bg-surface-2 px-[9px] py-[3px] text-[11px] text-text-2">
-                  {categoryNames.get(link.category_id) ?? "Uncategorized"}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => handleDelete(link)}
-                  disabled={link.id.startsWith(OPTIMISTIC_PREFIX)}
-                  aria-label={`Delete ${link.title}`}
-                  title="Delete"
-                  className="grid h-[30px] w-[30px] flex-none cursor-pointer place-items-center rounded-lg border border-border bg-transparent text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <TrashIcon />
-                </button>
-              </li>
+            {groups.map((group) => (
+              <div key={group.key}>
+                {grouped ? (
+                  <h3 className="flex items-center justify-between border-b border-border bg-surface-2 px-5 py-2 font-mono text-[11px] uppercase tracking-wide text-muted">
+                    {group.label}
+                    <span>{group.links.length}</span>
+                  </h3>
+                ) : null}
+                <ul className="list-none">
+                  {group.links.map((link, index) => (
+                    <LinkRow
+                      key={link.id}
+                      link={link}
+                      categoryName={categoryNames.get(link.category_id) ?? "Uncategorized"}
+                      draggable={dragEnabled}
+                      onTogglePin={handleTogglePin}
+                      onDelete={handleDelete}
+                      dragHandleProps={getHandleProps(index)}
+                      rowProps={getRowProps(index)}
+                    />
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </>
         )}
       </div>
     </section>
