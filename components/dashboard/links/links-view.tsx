@@ -10,9 +10,11 @@ import {
   TrashIcon,
 } from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
+import { useDragReorder } from "@/components/dashboard/links/use-drag-reorder";
 import { useWorkspace } from "@/components/dashboard/workspace-context";
 import {
   compareLinks,
+  computeReorder,
   groupByCategory,
   partitionPinned,
   type LinkGroup,
@@ -82,6 +84,7 @@ function LinkRow({
   onTogglePin,
   onDelete,
   dragHandleProps,
+  rowProps,
 }: {
   link: LinkItem;
   categoryName: string;
@@ -89,11 +92,20 @@ function LinkRow({
   onTogglePin: (link: LinkItem) => void;
   onDelete: (link: LinkItem) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  // `React.HTMLAttributes` does not admit `data-*` keys, so the index signature
+  // is what lets the hook's data-dragging / data-drop-target flags typecheck.
+  rowProps?: React.HTMLAttributes<HTMLLIElement> & {
+    ref?: (element: HTMLElement | null) => void;
+    [key: `data-${string}`]: string | undefined;
+  };
 }) {
   const optimistic = link.id.startsWith(OPTIMISTIC_PREFIX);
 
   return (
-    <li className="flex items-center gap-3 border-b border-border px-5 py-[13px] hover:bg-surface-2">
+    <li
+      {...rowProps}
+      className="flex items-center gap-3 border-b border-border px-5 py-[13px] hover:bg-surface-2 data-[dragging=true]:opacity-40 data-[drop-target=true]:border-t-2 data-[drop-target=true]:border-t-accent"
+    >
       {draggable ? (
         <button
           type="button"
@@ -360,6 +372,52 @@ export default function LinksView({
     }
   }
 
+  async function handleReorder(fromIndex: number, toIndex: number) {
+    const order = computeReorder(rest, fromIndex, toIndex);
+
+    if (order.length === 0) {
+      return;
+    }
+
+    const previousLinks = links;
+    const byId = new Map(order.map((entry) => [entry.id, entry.sort_order]));
+
+    setLinks((current) =>
+      current.map((link) =>
+        byId.has(link.id) ? { ...link, sort_order: byId.get(link.id)! } : link
+      )
+    );
+
+    try {
+      const response = await fetch("/api/links/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response, "Could not save the new order."));
+      }
+
+      // Replace optimistic positions with what was actually stored.
+      const { links: saved }: { links: LinkItem[] } = await response.json();
+      const savedById = new Map(saved.map((link) => [link.id, link]));
+
+      setLinks((current) => current.map((link) => savedById.get(link.id) ?? link));
+    } catch (error) {
+      setLinks(previousLinks);
+      showToast(error instanceof Error ? error.message : "Could not save the new order.");
+    }
+  }
+
+  const dragEnabled = sort === "manual" && !grouped && !query.trim();
+
+  const { getHandleProps, getRowProps } = useDragReorder({
+    count: rest.length,
+    enabled: dragEnabled,
+    onCommit: handleReorder,
+  });
+
   return (
     <section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow">
       <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-[18px]">
@@ -542,14 +600,16 @@ export default function LinksView({
                   </h3>
                 ) : null}
                 <ul className="list-none">
-                  {group.links.map((link) => (
+                  {group.links.map((link, index) => (
                     <LinkRow
                       key={link.id}
                       link={link}
                       categoryName={categoryNames.get(link.category_id) ?? "Uncategorized"}
-                      draggable={sort === "manual"}
+                      draggable={dragEnabled}
                       onTogglePin={handleTogglePin}
                       onDelete={handleDelete}
+                      dragHandleProps={getHandleProps(index)}
+                      rowProps={getRowProps(index)}
                     />
                   ))}
                 </ul>
