@@ -123,6 +123,15 @@ export function useDragReorder({ count, enabled, onCommit }: DragReorderOptions)
         onKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => {
           // Keyboard equivalent: drag alone is unusable without a pointer, and
           // every row here is already keyboard-reachable.
+          //
+          // Bail out if a pointer drag is already in progress (pointer capture
+          // held, focus still on the grip button): otherwise a keydown landing
+          // mid-drag could fire a second, independent onCommit on top of the
+          // eventual pointer finish(), double-committing the reorder.
+          if (dragIndexRef.current !== null) {
+            return;
+          }
+
           if (event.key === "ArrowUp" && index > 0) {
             event.preventDefault();
             onCommit(index, index - 1);

@@ -410,7 +410,14 @@ export default function LinksView({
     }
   }
 
-  const dragEnabled = sort === "manual" && !grouped && !query.trim();
+  // `rest` is narrowed by the category filter (`activeFilter`) before drag ever
+  // sees it, same as grouping and search narrow it. If a specific category is
+  // selected, `computeReorder` would only renumber that subset to sort_order
+  // 1..N and the PATCH would persist just those ids, leaving every link
+  // outside the filter with a stale sort_order — the corrupted-order hazard
+  // this guard exists to prevent. Only "all" (no category filter) keeps
+  // `rest`'s indices mapped 1:1 onto the full manual order.
+  const dragEnabled = sort === "manual" && !grouped && !query.trim() && activeFilter === "all";
 
   const { getHandleProps, getRowProps } = useDragReorder({
     count: rest.length,
