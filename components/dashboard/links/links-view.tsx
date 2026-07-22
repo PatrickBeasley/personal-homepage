@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/components/dashboard/toast";
 import { useDragReorder } from "@/components/dashboard/links/use-drag-reorder";
 import { useWorkspace } from "@/components/dashboard/workspace-context";
+import { CATEGORY_NAME_MAX_LENGTH } from "@/lib/dashboard/api";
 import {
   compareLinks,
   computeReorder,
@@ -34,6 +35,9 @@ const INPUT_CLASS =
 
 const CONTROL_CLASS =
   "h-9 rounded-[9px] border border-border-2 bg-surface-2 px-[10px] text-[13px] text-text";
+
+/** Sentinel `<option>` value; never a real category id, which is always a uuid. */
+const NEW_CATEGORY_VALUE = "__new__";
 
 /**
  * Marks a row that exists only in local state while its POST is in flight.
@@ -177,7 +181,7 @@ function LinkRow({
 
 export default function LinksView({
   initialLinks,
-  categories,
+  categories: initialCategories,
 }: {
   initialLinks: LinkItem[];
   categories: Category[];
@@ -198,6 +202,13 @@ export default function LinksView({
   const [sort, setSort] = useState<LinkSortKey>("manual");
   const [grouped, setGrouped] = useState(false);
 
+  // Seeded from the server prop, then owned locally so a category created from
+  // this page appears without a reload.
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [draftCategoryName, setDraftCategoryName] = useState("");
+  const [savingCategory, setSavingCategory] = useState(false);
+
   const formId = useId();
   const searchId = useId();
   const filterId = useId();
@@ -205,6 +216,7 @@ export default function LinksView({
   const titleId = useId();
   const urlId = useId();
   const draftCategoryFieldId = useId();
+  const newCategoryFieldId = useId();
 
   // Both workspaces are already in memory, so switching is a re-filter — no refetch.
   const workspaceCategories = useMemo(
@@ -322,6 +334,46 @@ export default function LinksView({
       showToast(error instanceof Error ? error.message : "Could not save the link.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleAddCategory(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const name = draftCategoryName.trim();
+
+    if (!name || savingCategory) {
+      return;
+    }
+
+    setSavingCategory(true);
+
+    try {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ctx: workspace, kind: "link", name }),
+      });
+
+      if (!response.ok) {
+        // A 409 already carries a usable message ("X already exists in this
+        // list"), so it is surfaced verbatim rather than replaced.
+        throw new Error(await readApiError(response, "Could not add the category."));
+      }
+
+      const created: Category = await response.json();
+
+      // Not optimistic: the server assigns sort_order and rejects duplicates,
+      // so there is nothing useful to guess.
+      setCategories((previous) => [...previous, created]);
+      setDraftCategoryId(created.id);
+      setDraftCategoryName("");
+      setAddingCategory(false);
+      showToast(`Added "${created.name}"`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Could not add the category.");
+    } finally {
+      setSavingCategory(false);
     }
   }
 
@@ -485,7 +537,14 @@ export default function LinksView({
           <select
             id={draftCategoryFieldId}
             value={activeDraftCategoryId}
-            onChange={(event) => setDraftCategoryId(event.target.value)}
+            onChange={(event) => {
+              if (event.target.value === NEW_CATEGORY_VALUE) {
+                setAddingCategory(true);
+                return;
+              }
+
+              setDraftCategoryId(event.target.value);
+            }}
             className={INPUT_CLASS}
           >
             {workspaceCategories.map((category) => (
@@ -493,6 +552,7 @@ export default function LinksView({
                 {category.name}
               </option>
             ))}
+            <option value={NEW_CATEGORY_VALUE}>+ New category…</option>
           </select>
 
           <button
@@ -501,6 +561,44 @@ export default function LinksView({
             className="h-[38px] cursor-pointer rounded-[9px] px-4 text-sm font-semibold text-white bg-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             Save
+          </button>
+        </form>
+      ) : null}
+
+      {addingCategory ? (
+        <form
+          onSubmit={handleAddCategory}
+          className="flex items-center gap-[10px] border-b border-border bg-surface-2 px-5 py-3"
+        >
+          <label htmlFor={newCategoryFieldId} className="sr-only">
+            New category name
+          </label>
+          <input
+            id={newCategoryFieldId}
+            value={draftCategoryName}
+            onChange={(event) => setDraftCategoryName(event.target.value)}
+            placeholder="Category name"
+            maxLength={CATEGORY_NAME_MAX_LENGTH}
+            autoFocus
+            required
+            className={`${INPUT_CLASS} min-w-0 flex-1`}
+          />
+          <button
+            type="submit"
+            disabled={savingCategory}
+            className="h-[38px] cursor-pointer rounded-[9px] bg-accent px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setAddingCategory(false);
+              setDraftCategoryName("");
+            }}
+            className="h-[38px] cursor-pointer rounded-[9px] border border-border bg-transparent px-4 text-sm text-text-2"
+          >
+            Cancel
           </button>
         </form>
       ) : null}
