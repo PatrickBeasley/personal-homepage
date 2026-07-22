@@ -10,6 +10,11 @@ alter table public.dashboard_links
 -- Backfill from created_at desc within each workspace, which reproduces exactly
 -- what the default "Recent" view shows today. Without this every row would share
 -- sort_order 0 and the first drag would scramble the list.
+--
+-- This is a one-shot backfill: it runs once as this migration is applied, before
+-- any manual ordering exists. It is deliberately unconditional (no guard on the
+-- prior value) because there is nothing to preserve yet. Do NOT replay this file
+-- after the reorder API is live, or it would reset every list to created_at order.
 with ranked as (
   select id,
          row_number() over (partition by ctx order by created_at desc) as position
@@ -26,3 +31,9 @@ create index if not exists dashboard_links_ctx_pinned_sort_idx
 
 comment on column public.dashboard_links.pinned is
   'Pinned links render in a band above all other links in the same workspace.';
+
+-- Rollback guidance:
+-- drop index if exists public.dashboard_links_ctx_pinned_sort_idx;
+-- alter table public.dashboard_links drop column if exists pinned;
+-- (sort_order is not dropped; it predates this migration. To revert the backfill,
+--  update public.dashboard_links set sort_order = 0;)
