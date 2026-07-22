@@ -20,7 +20,7 @@ export default async function LinksPage() {
     supabase
       .from("dashboard_links")
       .select(LINK_COLUMNS)
-      .order("created_at", { ascending: false }),
+      .order("sort_order", { ascending: true }),
     supabase
       .from("dashboard_categories")
       .select(CATEGORY_COLUMNS)
