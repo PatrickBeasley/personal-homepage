@@ -708,6 +708,7 @@ export default function LinksView({
     setEditingId(null);
     setDraftTitle("");
     setDraftUrl("");
+    setDraftCategoryId("");
     setFormOpen(false);
   }
 
@@ -718,6 +719,7 @@ export default function LinksView({
       setEditingId(null);
       setDraftTitle("");
       setDraftUrl("");
+      setDraftCategoryId("");
       setFormOpen(true);
       return;
     }
