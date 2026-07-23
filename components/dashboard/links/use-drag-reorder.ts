@@ -74,7 +74,7 @@ export function useDragReorder({ count, enabled, onCommit }: DragReorderOptions)
       }
 
       return {
-        onPointerDown: (event: React.PointerEvent<HTMLButtonElement>) => {
+        onPointerDown: (event: React.PointerEvent<HTMLElement>) => {
           // Ignore secondary buttons; a right-click must not start a drag.
           if (event.button !== 0) {
             return;
@@ -88,7 +88,7 @@ export function useDragReorder({ count, enabled, onCommit }: DragReorderOptions)
           setOverIndex(index);
         },
 
-        onPointerMove: (event: React.PointerEvent<HTMLButtonElement>) => {
+        onPointerMove: (event: React.PointerEvent<HTMLElement>) => {
           if (dragIndexRef.current === null) {
             return;
           }
@@ -124,12 +124,12 @@ export function useDragReorder({ count, enabled, onCommit }: DragReorderOptions)
         onPointerUp: finish,
         onPointerCancel: finish,
 
-        onKeyDown: (event: React.KeyboardEvent<HTMLButtonElement>) => {
+        onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => {
           // Keyboard equivalent: drag alone is unusable without a pointer, and
           // every row here is already keyboard-reachable.
           //
           // Bail out if a pointer drag is already in progress (pointer capture
-          // held, focus still on the grip button): otherwise a keydown landing
+          // held, focus still on the drag handle): otherwise a keydown landing
           // mid-drag could fire a second, independent onCommit on top of the
           // eventual pointer finish(), double-committing the reorder.
           if (dragIndexRef.current !== null) {

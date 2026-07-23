@@ -1,14 +1,8 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 
-import {
-  GripIcon,
-  LinkIcon,
-  PinIcon,
-  SearchIcon,
-  TrashIcon,
-} from "@/components/dashboard/icons";
+import { LinkIcon, PinIcon, SearchIcon, TrashIcon } from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
 import { useDragReorder } from "@/components/dashboard/links/use-drag-reorder";
 import { useWorkspace } from "@/components/dashboard/workspace-context";
@@ -29,6 +23,54 @@ const SORT_OPTIONS: { value: LinkSortKey; label: string }[] = [
   { value: "alpha", label: "A–Z" },
   { value: "category", label: "Category" },
 ];
+
+/** localStorage key for the remembered Links view (sort, grouping, filter). */
+const LINKS_PREFS_KEY = "pb-links-prefs";
+
+/** The remembered view. Every field optional so a partial/older payload still applies. */
+interface LinksPrefs {
+  sort?: LinkSortKey;
+  grouped?: boolean;
+  filter?: string;
+}
+
+/**
+ * Reads the remembered view from localStorage, validating each field so a
+ * corrupt or stale payload can never push an invalid sort key (or a non-boolean
+ * `grouped`) into state. Returns null when there is nothing usable to restore.
+ */
+function readLinksPrefs(): LinksPrefs | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(LINKS_PREFS_KEY);
+
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const prefs: LinksPrefs = {};
+
+    if (typeof parsed.sort === "string" && SORT_OPTIONS.some((option) => option.value === parsed.sort)) {
+      prefs.sort = parsed.sort as LinkSortKey;
+    }
+
+    if (typeof parsed.grouped === "boolean") {
+      prefs.grouped = parsed.grouped;
+    }
+
+    if (typeof parsed.filter === "string") {
+      prefs.filter = parsed.filter;
+    }
+
+    return prefs;
+  } catch {
+    return null;
+  }
+}
 
 const INPUT_CLASS =
   "h-[38px] rounded-[9px] border border-border-2 bg-surface px-3 text-sm text-text";
@@ -95,7 +137,9 @@ function LinkRow({
   draggable: boolean;
   onTogglePin: (link: LinkItem) => void;
   onDelete: (link: LinkItem) => void;
-  dragHandleProps?: React.HTMLAttributes<HTMLButtonElement>;
+  // Element-general (not <button>-specific) because the handle is now the
+  // leading letter avatar, a <span>, not a separate grip button.
+  dragHandleProps?: React.HTMLAttributes<HTMLElement>;
   // `React.HTMLAttributes` does not admit `data-*` keys, so the index signature
   // is what lets the hook's data-dragging / data-drop-target flags typecheck.
   rowProps?: React.HTMLAttributes<HTMLLIElement> & {
@@ -104,6 +148,7 @@ function LinkRow({
   };
 }) {
   const optimistic = link.id.startsWith(OPTIMISTIC_PREFIX);
+  const initial = (link.title[0] ?? "?").toUpperCase();
 
   return (
     <li
@@ -111,26 +156,29 @@ function LinkRow({
       className="flex items-center gap-3 border-b border-border px-5 py-[13px] hover:bg-surface-2 data-[dragging=true]:opacity-40 data-[drop-target=true]:border-t-2 data-[drop-target=true]:border-t-accent"
     >
       {draggable ? (
-        <button
-          type="button"
-          // `touch-action: none` is load-bearing: without it the browser claims
-          // the gesture for scrolling before the pointer handlers ever see it.
-          style={{ touchAction: "none" }}
+        // The letter avatar doubles as the drag handle when reordering is live.
+        // `touch-action: none` is load-bearing: without it the browser claims the
+        // gesture for scrolling before the pointer handlers ever see it. It is
+        // focusable with role="button" so the hook's Arrow-key reorder still works.
+        <span
+          {...dragHandleProps}
+          role="button"
+          tabIndex={0}
           aria-label={`Reorder ${link.title}`}
           title="Drag to reorder"
-          className="grid h-[30px] w-[22px] flex-none cursor-grab place-items-center rounded text-muted hover:text-text active:cursor-grabbing"
-          {...dragHandleProps}
+          style={{ touchAction: "none" }}
+          className="grid h-[34px] w-[34px] flex-none cursor-grab select-none place-items-center rounded-[9px] bg-accent-soft font-mono text-xs font-semibold text-accent active:cursor-grabbing"
         >
-          <GripIcon />
-        </button>
-      ) : null}
-
-      <span
-        aria-hidden="true"
-        className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[9px] bg-accent-soft font-mono text-xs font-semibold text-accent"
-      >
-        {(link.title[0] ?? "?").toUpperCase()}
-      </span>
+          {initial}
+        </span>
+      ) : (
+        <span
+          aria-hidden="true"
+          className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[9px] bg-accent-soft font-mono text-xs font-semibold text-accent"
+        >
+          {initial}
+        </span>
+      )}
 
       <div className="min-w-0 flex-1">
         <a
@@ -209,6 +257,63 @@ export default function LinksView({
   const [draftCategoryName, setDraftCategoryName] = useState("");
   const [savingCategory, setSavingCategory] = useState(false);
 
+  // Restore the last-used view once on mount. This is a genuine external-store
+  // read, not the state-from-props sync this view otherwise avoids: localStorage
+  // is a side channel the server render cannot see, so reading it in an effect
+  // (rather than a lazy `useState` initializer) is what keeps the server and the
+  // first client render identical and avoids a hydration mismatch. The cost is a
+  // brief flash of the default view before the saved prefs apply.
+  useEffect(() => {
+    const prefs = readLinksPrefs();
+
+    if (!prefs) {
+      return;
+    }
+
+    if (prefs.sort !== undefined) {
+      setSort(prefs.sort);
+    }
+
+    if (prefs.grouped !== undefined) {
+      setGrouped(prefs.grouped);
+    }
+
+    if (prefs.filter !== undefined) {
+      setCategoryFilter(prefs.filter);
+    }
+  }, []);
+
+  // Persist the view prefs. Written from the change handlers rather than an
+  // effect on [sort, grouped, categoryFilter], so the mount restore above can
+  // never race a write of the default values before it applies the saved ones.
+  // Closes over the current render's values and overrides the one field that
+  // changed, so a single-field update still writes the whole object correctly.
+  function persistPrefs(next: LinksPrefs) {
+    try {
+      window.localStorage.setItem(
+        LINKS_PREFS_KEY,
+        JSON.stringify({ sort, grouped, filter: categoryFilter, ...next })
+      );
+    } catch {
+      // Private mode or a full quota just means the view is not remembered.
+    }
+  }
+
+  function handleSortChange(value: LinkSortKey) {
+    setSort(value);
+    persistPrefs({ sort: value });
+  }
+
+  function handleGroupedChange(value: boolean) {
+    setGrouped(value);
+    persistPrefs({ grouped: value });
+  }
+
+  function handleFilterChange(value: string) {
+    setCategoryFilter(value);
+    persistPrefs({ filter: value });
+  }
+
   const formId = useId();
   const searchId = useId();
   const filterId = useId();
@@ -264,10 +369,17 @@ export default function LinksView({
 
   // Grouping is a view toggle, not a sort: it sections whatever `rest` already
   // holds, so the active sort still decides the order inside each section.
-  const groups: LinkGroup[] = useMemo(
-    () => (grouped ? groupByCategory(rest, categoryNames) : [{ key: "all", label: "", links: rest }]),
-    [grouped, rest, categoryNames]
-  );
+  const groups: LinkGroup[] = useMemo(() => {
+    if (!grouped) {
+      return [{ key: "all", label: "", links: rest }];
+    }
+
+    // Sections are ordered by category name so a grouped view reads predictably
+    // top to bottom, independent of the active within-section sort. `compareLinks`
+    // still decides the order of links inside each section, so Group + A–Z gives
+    // category name, then link name.
+    return groupByCategory(rest, categoryNames).sort((a, b) => a.label.localeCompare(b.label));
+  }, [grouped, rest, categoryNames]);
 
   async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -630,7 +742,7 @@ export default function LinksView({
         <select
           id={filterId}
           value={activeFilter}
-          onChange={(event) => setCategoryFilter(event.target.value)}
+          onChange={(event) => handleFilterChange(event.target.value)}
           className={CONTROL_CLASS}
         >
           <option value="all">All categories</option>
@@ -647,7 +759,7 @@ export default function LinksView({
         <select
           id={sortId}
           value={sort}
-          onChange={(event) => setSort(event.target.value as LinkSortKey)}
+          onChange={(event) => handleSortChange(event.target.value as LinkSortKey)}
           className={CONTROL_CLASS}
         >
           {SORT_OPTIONS.map((option) => (
@@ -661,7 +773,7 @@ export default function LinksView({
           <input
             type="checkbox"
             checked={grouped}
-            onChange={(event) => setGrouped(event.target.checked)}
+            onChange={(event) => handleGroupedChange(event.target.checked)}
             className="h-3.5 w-3.5 accent-[var(--accent)]"
           />
           Group
