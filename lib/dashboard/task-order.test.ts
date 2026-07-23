@@ -57,8 +57,11 @@ describe("compareTasks", () => {
   });
 
   it("manual: a list missing from the rank map sorts last, not first", () => {
-    const known = task({ id: "a", listId: "list-a" });
-    const unknown = task({ id: "b", listId: "list-gone" });
+    // The known task is deliberately given a worse position and an id that
+    // loses the tie-break, so this passes ONLY if the missing list's rank
+    // sorts it last — not because position or id happened to break the tie.
+    const known = task({ id: "z", listId: "list-a", position: 9 });
+    const unknown = task({ id: "a", listId: "list-gone", position: 0 });
 
     expect(compareTasks(known, unknown, "manual", rank)).toBeLessThan(0);
   });
