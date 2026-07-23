@@ -319,7 +319,7 @@ export default function DashboardShell({
           <ThemeToggle className="h-10 w-10 flex-none rounded-[11px]" />
         </header>
 
-        <div className="pb-pad flex max-w-[1080px] flex-col gap-5 px-8 py-6">{children}</div>
+        <div className="pb-pad flex max-w-[1080px] flex-1 flex-col gap-5 px-8 py-6">{children}</div>
       </main>
 
       <nav

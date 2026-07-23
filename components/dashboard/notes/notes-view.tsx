@@ -519,7 +519,7 @@ export default function NotesView({
     saveState === "saving" ? "saving…" : saveState === "error" ? "not saved" : "saved";
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow">
+    <section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow min-[561px]:min-h-0 min-[561px]:flex-1">
       <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-[18px]">
         <div className="flex min-w-[160px] flex-1 items-center gap-[10px]">
           <span className="flex text-accent">
@@ -541,8 +541,8 @@ export default function NotesView({
         </button>
       </div>
 
-      <div className="grid min-h-[360px] grid-cols-[minmax(180px,240px)_1fr] max-[560px]:grid-cols-1">
-        <div className="flex flex-col border-r border-border max-[560px]:border-r-0 max-[560px]:border-b">
+      <div className="grid min-h-[360px] grid-cols-[minmax(180px,240px)_1fr] max-[560px]:grid-cols-1 min-[561px]:min-h-0 min-[561px]:flex-1 min-[561px]:grid-rows-1">
+        <div className="flex flex-col border-r border-border max-[560px]:border-r-0 max-[560px]:border-b min-[561px]:min-h-0">
           <div className="flex flex-wrap gap-2 border-b border-border px-[14px] py-[10px]">
             <div className="relative basis-full">
               <label htmlFor={searchId} className="sr-only">
@@ -598,7 +598,7 @@ export default function NotesView({
             </select>
           </div>
 
-          <div className="max-h-[460px] flex-1 overflow-auto">
+          <div className="max-h-[460px] flex-1 overflow-auto min-[561px]:max-h-none min-[561px]:min-h-0">
             {visibleNotes.length === 0 ? (
               <p className="px-4 py-10 text-center text-[13px] text-muted">
                 No notes. Create one ↑
@@ -641,7 +641,7 @@ export default function NotesView({
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-col">
+        <div className="flex min-w-0 flex-col min-[561px]:min-h-0">
           {activeNote ? (
             <div className="flex min-h-0 flex-1 flex-col">
               <div className="flex items-center gap-[10px] border-b border-border px-4 py-3">
@@ -772,7 +772,7 @@ export default function NotesView({
                 // a contenteditable matches `:focus-visible` on a mouse click
                 // too, so a focus-visible-only rule would leave the heavy box in
                 // place for exactly that interaction.
-                className="min-h-[200px] flex-1 overflow-auto px-[18px] py-[18px] text-[15px] leading-[1.7] text-text outline-none focus:shadow-[inset_0_0_0_2px_var(--color-accent-soft)]"
+                className="min-h-[200px] flex-1 overflow-auto px-[18px] py-[18px] text-[15px] leading-[1.7] text-text outline-none focus:shadow-[inset_0_0_0_2px_var(--color-accent-soft)] min-[561px]:min-h-0"
               />
             </div>
           ) : (
