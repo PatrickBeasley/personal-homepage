@@ -137,6 +137,30 @@ describe("gsd client", () => {
     }
   });
 
+  it("treats a JSON 200 object wrapper (not an array) as a bad response", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ lists: [] }));
+
+    const result = await getLists();
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.status).toBe(0);
+      expect(result.error.code).toBe("BAD_RESPONSE");
+    }
+  });
+
+  it("treats a JSON 200 object wrapper for tasks (not an array) as a bad response", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ tasks: [] }));
+
+    const result = await getAllTasks();
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.status).toBe(0);
+      expect(result.error.code).toBe("BAD_RESPONSE");
+    }
+  });
+
   it("turns a network failure into a status-0 error", async () => {
     fetchMock.mockRejectedValue(new TypeError("fetch failed"));
 

@@ -195,13 +195,31 @@ async function gsdFetch<T>(
 }
 
 /** Active lists in display order. */
-export function getLists(): Promise<GsdResult<GsdList[]>> {
-  return gsdFetch<GsdList[]>("/lists");
+export async function getLists(): Promise<GsdResult<GsdList[]>> {
+  const result = await gsdFetch<GsdList[]>("/lists");
+
+  if (result.ok && !Array.isArray(result.data)) {
+    return {
+      ok: false,
+      error: { status: 0, code: "BAD_RESPONSE", message: "Project-GSD returned an unexpected shape." },
+    };
+  }
+
+  return result;
 }
 
 /** Every active task across all lists — list order, then task order. */
-export function getAllTasks(): Promise<GsdResult<GsdTask[]>> {
-  return gsdFetch<GsdTask[]>("/tasks");
+export async function getAllTasks(): Promise<GsdResult<GsdTask[]>> {
+  const result = await gsdFetch<GsdTask[]>("/tasks");
+
+  if (result.ok && !Array.isArray(result.data)) {
+    return {
+      ok: false,
+      error: { status: 0, code: "BAD_RESPONSE", message: "Project-GSD returned an unexpected shape." },
+    };
+  }
+
+  return result;
 }
 
 /** Creates a task; GSD inserts it at the top of the list and assigns the uuid. */

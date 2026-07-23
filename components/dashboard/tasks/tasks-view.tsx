@@ -428,11 +428,13 @@ export default function TasksView({
 
     const repeating = target.repeat !== "none";
 
-    if (repeating) {
-      // GSD advances the due date instead of completing — there is nothing
-      // safe to guess, so wait for the entity and apply it.
-      setPendingIds((previous) => new Set(previous).add(target.id));
-    } else {
+    // Both paths mark the row busy while the POST is in flight — repeating
+    // relies on this to disable the checkbox since it has no optimistic
+    // flip, and non-repeating needs it too so a rapid double-click can't
+    // send two overlapping toggle requests.
+    setPendingIds((previous) => new Set(previous).add(target.id));
+
+    if (!repeating) {
       const nextDone = !target.done;
 
       setTasks((previous) =>
@@ -465,15 +467,13 @@ export default function TasksView({
 
       showToast(error instanceof Error ? error.message : "Could not update the task.");
     } finally {
-      if (repeating) {
-        setPendingIds((previous) => {
-          const next = new Set(previous);
+      setPendingIds((previous) => {
+        const next = new Set(previous);
 
-          next.delete(target.id);
+        next.delete(target.id);
 
-          return next;
-        });
-      }
+        return next;
+      });
     }
   }
 
