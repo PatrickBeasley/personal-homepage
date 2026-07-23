@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
-import { LinkIcon, PinIcon, SearchIcon, TrashIcon } from "@/components/dashboard/icons";
+import {
+  EditIcon,
+  EllipsisIcon,
+  LinkIcon,
+  PinIcon,
+  SearchIcon,
+  TrashIcon,
+} from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
 import { useDragReorder } from "@/components/dashboard/links/use-drag-reorder";
 import { useWorkspace } from "@/components/dashboard/workspace-context";
@@ -15,6 +23,7 @@ import {
   type LinkGroup,
   type LinkSortKey,
 } from "@/lib/dashboard/link-order";
+import { resolveEditingLink } from "@/lib/dashboard/resolve-editing-link";
 import type { Category, LinkItem } from "@/lib/dashboard/types";
 
 const SORT_OPTIONS: { value: LinkSortKey; label: string }[] = [
@@ -123,10 +132,153 @@ async function readApiError(response: Response, fallback: string): Promise<strin
   return fallback;
 }
 
+function LinkRowMenu({
+  link,
+  disabled,
+  onEdit,
+  onTogglePin,
+  onDelete,
+}: {
+  link: LinkItem;
+  disabled: boolean;
+  onEdit: (link: LinkItem) => void;
+  onTogglePin: (link: LinkItem) => void;
+  onDelete: (link: LinkItem) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; right: number } | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  function openMenu() {
+    const rect = triggerRef.current?.getBoundingClientRect();
+
+    if (!rect) {
+      return;
+    }
+
+    // right is measured from the viewport's right edge so the menu hangs under
+    // the trigger's right corner regardless of horizontal scroll.
+    setCoords({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    // Move focus into the menu so keyboard users land on the first item; the
+    // portal sits at the end of <body>, so Tab would not otherwise reach it.
+    menuRef.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+
+      if (!menuRef.current?.contains(target) && !triggerRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
+
+    function handleDismiss() {
+      setOpen(false);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    // Capture phase so a scroll inside the list container (not just the window)
+    // also dismisses.
+    window.addEventListener("scroll", handleDismiss, true);
+    window.addEventListener("resize", handleDismiss);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleDismiss, true);
+      window.removeEventListener("resize", handleDismiss);
+    };
+  }, [open]);
+
+  function runAndClose(action: () => void) {
+    setOpen(false);
+    action();
+  }
+
+  const itemClass =
+    "flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-surface-2";
+
+  return (
+    <div className="flex-none">
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        disabled={disabled}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Actions for ${link.title}`}
+        title="Actions"
+        className="grid h-[30px] w-[30px] cursor-pointer place-items-center rounded-lg border border-border bg-transparent text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <EllipsisIcon size={16} />
+      </button>
+
+      {open && coords
+        ? createPortal(
+            <div
+              ref={menuRef}
+              role="menu"
+              aria-label={`Actions for ${link.title}`}
+              style={{ position: "fixed", top: coords.top, right: coords.right }}
+              className="z-50 min-w-[168px] overflow-hidden rounded-[10px] border border-border-2 bg-elevated py-1 shadow-lg"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => runAndClose(() => onEdit(link))}
+                className={`${itemClass} text-text`}
+              >
+                <EditIcon size={15} />
+                Edit
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => runAndClose(() => onTogglePin(link))}
+                className={`${itemClass} text-text`}
+              >
+                <PinIcon />
+                {link.pinned ? "Unpin" : "Pin to top"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => runAndClose(() => onDelete(link))}
+                className={`${itemClass} text-red-500`}
+              >
+                <TrashIcon />
+                Delete
+              </button>
+            </div>,
+            document.body
+          )
+        : null}
+    </div>
+  );
+}
+
 function LinkRow({
   link,
   categoryName,
   draggable,
+  onEdit,
   onTogglePin,
   onDelete,
   dragHandleProps,
@@ -135,6 +287,7 @@ function LinkRow({
   link: LinkItem;
   categoryName: string;
   draggable: boolean;
+  onEdit: (link: LinkItem) => void;
   onTogglePin: (link: LinkItem) => void;
   onDelete: (link: LinkItem) => void;
   // Element-general (not <button>-specific) because the handle is now the
@@ -198,31 +351,13 @@ function LinkRow({
         {categoryName}
       </span>
 
-      <button
-        type="button"
-        onClick={() => onTogglePin(link)}
+      <LinkRowMenu
+        link={link}
         disabled={optimistic}
-        aria-pressed={link.pinned}
-        aria-label={link.pinned ? `Unpin ${link.title}` : `Pin ${link.title}`}
-        title={link.pinned ? "Unpin" : "Pin to top"}
-        className={[
-          "grid h-[30px] w-[30px] flex-none cursor-pointer place-items-center rounded-lg border border-border bg-transparent disabled:cursor-not-allowed disabled:opacity-50",
-          link.pinned ? "text-accent" : "text-muted hover:text-text",
-        ].join(" ")}
-      >
-        <PinIcon />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onDelete(link)}
-        disabled={optimistic}
-        aria-label={`Delete ${link.title}`}
-        title="Delete"
-        className="grid h-[30px] w-[30px] flex-none cursor-pointer place-items-center rounded-lg border border-border bg-transparent text-muted hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <TrashIcon />
-      </button>
+        onEdit={onEdit}
+        onTogglePin={onTogglePin}
+        onDelete={onDelete}
+      />
     </li>
   );
 }
@@ -243,6 +378,7 @@ export default function LinksView({
   const [draftUrl, setDraftUrl] = useState("");
   const [draftCategoryId, setDraftCategoryId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   // Manual is the default: it is the only order the user controls, and the
@@ -381,8 +517,16 @@ export default function LinksView({
     return groupByCategory(rest, categoryNames).sort((a, b) => a.label.localeCompare(b.label));
   }, [grouped, rest, categoryNames]);
 
-  async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
+  const editingLink = resolveEditingLink(links, editingId);
+  const editing = editingLink !== null;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (editingId !== null) {
+      await handleEditSave();
+      return;
+    }
 
     const title = draftTitle.trim();
     const rawUrl = draftUrl.trim();
@@ -449,6 +593,68 @@ export default function LinksView({
     }
   }
 
+  async function handleEditSave() {
+    const target = resolveEditingLink(links, editingId);
+
+    // The row vanished (deleted elsewhere) between opening the editor and saving.
+    if (!target) {
+      handleEditCancel();
+      return;
+    }
+
+    const title = draftTitle.trim();
+    const rawUrl = draftUrl.trim();
+    const categoryId = activeDraftCategoryId;
+
+    if (!title || !rawUrl || !categoryId || saving) {
+      return;
+    }
+
+    // Mirror handleSubmit's normalization so the optimistic row shows the href
+    // the database will store.
+    const url = /^https?:\/\//i.test(rawUrl) ? rawUrl : `https://${rawUrl}`;
+
+    setLinks((previous) =>
+      previous.map((link) =>
+        link.id === target.id ? { ...link, title, url, category_id: categoryId } : link
+      )
+    );
+    setEditingId(null);
+    setDraftTitle("");
+    setDraftUrl("");
+    setFormOpen(false);
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/links/${target.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, url, category_id: categoryId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response, "Could not update the link."));
+      }
+
+      // The 200 carries the authoritative row (normalized url, new updated_at).
+      const saved: LinkItem = await response.json();
+
+      setLinks((previous) => previous.map((link) => (link.id === target.id ? saved : link)));
+      showToast("Link updated");
+    } catch (error) {
+      // Restore the row and reopen the editor with the typed values preserved.
+      setLinks((previous) => previous.map((link) => (link.id === target.id ? target : link)));
+      setEditingId(target.id);
+      setDraftTitle((current) => current || title);
+      setDraftUrl((current) => current || rawUrl);
+      setDraftCategoryId(categoryId);
+      setFormOpen(true);
+      showToast(error instanceof Error ? error.message : "Could not update the link.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function handleAddCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -489,7 +695,43 @@ export default function LinksView({
     }
   }
 
+  function handleEditStart(target: LinkItem) {
+    setEditingId(target.id);
+    setDraftTitle(target.title);
+    setDraftUrl(target.url);
+    setDraftCategoryId(target.category_id);
+    setAddingCategory(false);
+    setFormOpen(true);
+  }
+
+  function handleEditCancel() {
+    setEditingId(null);
+    setDraftTitle("");
+    setDraftUrl("");
+    setDraftCategoryId("");
+    setFormOpen(false);
+  }
+
+  // The "+ Add link" button starts a fresh add even while editing: leave edit
+  // mode and clear the drafts it seeded, then open an empty add form.
+  function handleToggleAddForm() {
+    if (editing) {
+      setEditingId(null);
+      setDraftTitle("");
+      setDraftUrl("");
+      setDraftCategoryId("");
+      setFormOpen(true);
+      return;
+    }
+
+    setFormOpen((formIsOpen) => !formIsOpen);
+  }
+
   async function handleDelete(target: LinkItem) {
+    if (target.id === editingId) {
+      handleEditCancel();
+    }
+
     setLinks((previous) => previous.filter((link) => link.id !== target.id));
 
     try {
@@ -601,7 +843,7 @@ export default function LinksView({
         </div>
         <button
           type="button"
-          onClick={() => setFormOpen((open) => !open)}
+          onClick={handleToggleAddForm}
           aria-expanded={formOpen}
           // The form is unmounted when collapsed, so the reference only points
           // at a real element while it is open.
@@ -615,9 +857,15 @@ export default function LinksView({
       {formOpen ? (
         <form
           id={formId}
-          onSubmit={handleAdd}
+          onSubmit={handleSubmit}
           className="grid animate-[pbPop_0.2s_ease_both] grid-cols-[1fr_1fr_auto_auto] gap-[10px] border-b border-border bg-surface-2 px-5 py-4 motion-reduce:animate-none max-[560px]:grid-cols-1"
         >
+          {editing ? (
+            <p className="col-span-full font-mono text-[11px] uppercase tracking-wide text-muted">
+              Edit link
+            </p>
+          ) : null}
+
           <label htmlFor={titleId} className="sr-only">
             Link title
           </label>
@@ -674,6 +922,16 @@ export default function LinksView({
           >
             Save
           </button>
+
+          {editing ? (
+            <button
+              type="button"
+              onClick={handleEditCancel}
+              className="h-[38px] cursor-pointer rounded-[9px] border border-border bg-transparent px-4 text-sm text-text-2"
+            >
+              Cancel
+            </button>
+          ) : null}
         </form>
       ) : null}
 
@@ -800,6 +1058,7 @@ export default function LinksView({
                       link={link}
                       categoryName={categoryNames.get(link.category_id) ?? "Uncategorized"}
                       draggable={false}
+                      onEdit={handleEditStart}
                       onTogglePin={handleTogglePin}
                       onDelete={handleDelete}
                     />
@@ -823,6 +1082,7 @@ export default function LinksView({
                       link={link}
                       categoryName={categoryNames.get(link.category_id) ?? "Uncategorized"}
                       draggable={dragEnabled}
+                      onEdit={handleEditStart}
                       onTogglePin={handleTogglePin}
                       onDelete={handleDelete}
                       dragHandleProps={getHandleProps(index)}
