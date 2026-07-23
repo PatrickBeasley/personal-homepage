@@ -58,7 +58,7 @@ cp .env.example .env.local   # then fill it in
 npm run dev
 ```
 
-Required environment variables — all four must also exist in Vercel for **both** Preview and Production, which are separate scopes:
+Required environment variables — all five must also exist in Vercel for **both** Preview and Production, which are separate scopes:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
