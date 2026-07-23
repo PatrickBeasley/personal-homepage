@@ -21,6 +21,7 @@
 |---|---|
 | Links | Categorised bookmarks with search, filter and sort |
 | Notes | Rich-text notes with debounced autosave |
+| Tasks | Project-GSD tasks: view, check off, quick add. Proxied server-side; not workspace-scoped |
 | Documents | File upload, signed-URL download, delete |
 | Feeds | Placeholder |
 | Settings | Manage the categories used by Links and Notes |
@@ -57,12 +58,13 @@ cp .env.example .env.local   # then fill it in
 npm run dev
 ```
 
-Required environment variables — all four must also exist in Vercel for **both** Preview and Production, which are separate scopes:
+Required environment variables — all five must also exist in Vercel for **both** Preview and Production, which are separate scopes:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL`
 - `ADMIN_EMAIL`
+- `GSD_API_KEY` — Project-GSD API key (server-only; created on the GSD Account page)
 
 `SUPABASE_SERVICE_ROLE_KEY` is used only for administrative scripts, never by the app. Never commit `.env.local`.
 
