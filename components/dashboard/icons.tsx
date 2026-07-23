@@ -126,3 +126,22 @@ export function PinIcon() {
     </svg>
   );
 }
+
+export function EllipsisIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function EditIcon({ size = 15 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  );
+}
