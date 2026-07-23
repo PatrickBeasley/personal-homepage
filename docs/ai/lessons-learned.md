@@ -138,3 +138,11 @@ This file is the operational memory for AI-assisted development on this project.
 **Root cause**: `read-only` is declared `{type:"boolean", default:false}` — Node's `parseArgs` rejects a value on a boolean option. Presence means read-only; absence means writable.
 **Reusable rule**: For boolean CLI flags, omit the flag to disable rather than passing `=false`. Verify a new MCP server actually starts (pipe an `initialize` JSON-RPC message to it) before assuming the config is good.
 **Action to encode**: None — recorded for recall.
+
+## 2026-07-23 — Dynamic App Router Pages Need `loading.tsx` or Navigation Blocks
+**Phase/Context**: Owner reported intermittent lag switching between dashboard sections
+**What worked**: Diagnosing from the code (systematic-debugging) instead of guessing — traced the per-navigation path (proxy auth → dynamic page render → Supabase/GSD fetch) and checked for a loading boundary (there was none anywhere in the app)
+**What failed**: Every `/dashboard/*` page is dynamic (reads cookies + fetches per request), but there was no `loading.tsx`. So the App Router couldn't prefetch the dynamic page, and each client-side navigation blocked on the fetch with no pending UI — the leaving page sat frozen. Latency varied with Supabase/cold-start/GSD, so it presented as *intermittent* lag. (The recent fill-height CSS was suspected but ruled out — it doesn't touch data fetching or navigation.)
+**Root cause**: App Router prefetch of a dynamic route only reaches the nearest Suspense boundary. No `loading.tsx` = no useful prefetch = blocking navigation with a frozen previous page.
+**Reusable rule**: A dynamic page (per-request server fetch) needs a `loading.tsx` in its segment; it gives an instant, prefetched skeleton and covers the *page* fetch (not the cookie-reading layout). A slow *external* fetch (Tasks → GSD) should additionally stream behind its own `<Suspense>` so navigation itself stays instant. Shape skeletons like the real card + fill-height so the swap is a fill, not a jump.
+**Action to encode**: Encoded in `AGENTS.md` (Pages convention) and `frontend.instructions.md` (State and Data Fetching). Tasks streaming follow-up filed in `docs/ai/backlog.md`.
