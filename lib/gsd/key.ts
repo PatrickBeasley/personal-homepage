@@ -24,7 +24,7 @@ export async function resolveGsdKey(): Promise<string | null> {
 
   if (error) {
     // The Supabase error object; never the key.
-    console.error("GSD key lookup error:", error);
+    console.error("GSD key lookup error:", error.code, error.message);
     return null;
   }
 

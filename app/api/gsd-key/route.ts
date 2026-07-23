@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (error) {
-    console.error("GSD key status read error:", error);
+    console.error("GSD key status read error:", error.code, error.message);
     return apiError("SERVER_ERROR", "Could not read the key status.", 500);
   }
 
@@ -118,7 +118,7 @@ export async function PUT(request: NextRequest) {
     .single();
 
   if (error || !data) {
-    console.error("GSD key save error:", error);
+    console.error("GSD key save error:", error?.code, error?.message);
     return apiError("SERVER_ERROR", "The key verified but could not be saved.", 500);
   }
 
@@ -146,7 +146,7 @@ export async function DELETE(request: NextRequest) {
   const { error } = await supabase.from("gsd_config").delete().eq("id", 1);
 
   if (error) {
-    console.error("GSD key delete error:", error);
+    console.error("GSD key delete error:", error.code, error.message);
     return apiError("SERVER_ERROR", "Could not remove the key.", 500);
   }
 
