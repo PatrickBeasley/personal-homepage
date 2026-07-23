@@ -88,3 +88,14 @@ export interface DocumentItem {
   visibility: "private" | "public";
   created_at: string;
 }
+
+/**
+ * Status of the stored Project-GSD API key, as returned by /api/gsd-key.
+ * Deliberately never includes the key itself: `last4` is computed server-side
+ * at save time and is the only key-derived value that reaches a browser.
+ */
+export interface GsdKeyStatus {
+  configured: boolean;
+  last4: string | null;
+  updated_at: string | null;
+}

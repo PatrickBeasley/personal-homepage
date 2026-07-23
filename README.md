@@ -21,7 +21,7 @@
 |---|---|
 | Links | Categorised bookmarks with search, filter and sort |
 | Notes | Rich-text notes with debounced autosave |
-| Tasks | Project-GSD tasks: view, check off, quick add. Proxied server-side; not workspace-scoped |
+| Tasks | Project-GSD tasks: view, check off, quick add. Proxied server-side; key managed in Settings; not workspace-scoped |
 | Documents | File upload, signed-URL download, delete |
 | Feeds | Placeholder |
 | Settings | Manage the categories used by Links and Notes |
@@ -47,6 +47,7 @@ Sessions are deliberately indefinite per device: session timebox and inactivity 
 | `dashboard_links` | Bookmarks; `category_id` is `on delete restrict` |
 | `dashboard_notes` | Notes; `content_html` is always sanitised server-side before storage |
 | `files_metadata` | Document metadata; objects live in the private `files` storage bucket |
+| `gsd_config` | Single-row Project-GSD API key, managed from Settings (write-only; never returned by any API) |
 
 `site_profile`, `projects`, `external_links`, `blog_posts` and `contact_submissions` are **orphaned v1 tables**. Nothing reads them. They are kept pending an export and a deliberate drop.
 
@@ -58,13 +59,12 @@ cp .env.example .env.local   # then fill it in
 npm run dev
 ```
 
-Required environment variables — all five must also exist in Vercel for **both** Preview and Production, which are separate scopes:
+Required environment variables — all four must also exist in Vercel for **both** Preview and Production, which are separate scopes:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_SITE_URL`
 - `ADMIN_EMAIL`
-- `GSD_API_KEY` — Project-GSD API key (server-only; created on the GSD Account page)
 
 `SUPABASE_SERVICE_ROLE_KEY` is used only for administrative scripts, never by the app. Never commit `.env.local`.
 

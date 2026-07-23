@@ -1,8 +1,8 @@
 /**
- * Server-only client for the Project-GSD API — the single place the
- * GSD_API_KEY is ever read. Nothing in this module may log, echo, or embed the
- * key in an error: every failure message below is static or comes verbatim
- * from GSD's response body.
+ * Server-only client for the Project-GSD API. The key is resolved from the
+ * gsd_config table via resolveGsdKey (lib/gsd/key.ts) — the env var is gone.
+ * Nothing in this module may log, echo, or embed the key in an error: every
+ * failure message below is static or comes verbatim from GSD's response body.
  *
  * GSD wire conventions (see the API reference in the 2026-07-23 spec):
  * responses are camelCase, request bodies are snake_case, errors are
@@ -11,6 +11,8 @@
  * Calls never throw for API-level failures — they resolve to a GsdResult so
  * route handlers can map failures deliberately instead of catching.
  */
+
+import { resolveGsdKey } from "@/lib/gsd/key";
 
 const BASE_URL = "https://project-gsd.com/api/v1";
 const TIMEOUT_MS = 10_000;
@@ -60,7 +62,7 @@ export interface GsdTask {
 /**
  * `status` is the upstream HTTP status, with two synthetic values:
  * `0` = never got a usable response (network failure, timeout, non-JSON 200);
- * `-1` = GSD_API_KEY is not configured (no request was attempted).
+ * `-1` = no Project-GSD key is configured (no request was attempted).
  */
 export interface GsdError {
   status: number;
@@ -88,8 +90,14 @@ export function mapGsdFailure(failure: GsdError): {
   message: string;
   status: number;
 } {
+  // Not-configured is a setup state, not a server fault: the Settings card is
+  // the remedy, so the code and message point there.
   if (failure.status === -1) {
-    return { error: "SERVER_ERROR", message: "The task service is not configured.", status: 500 };
+    return {
+      error: "NOT_CONFIGURED",
+      message: "Add your Project-GSD key in Settings.",
+      status: 503,
+    };
   }
 
   if (failure.status === 401) {
@@ -123,14 +131,17 @@ export function mapGsdFailure(failure: GsdError): {
 
 async function gsdFetch<T>(
   path: string,
-  init?: { method?: "GET" | "POST"; body?: Record<string, unknown> }
+  init?: { method?: "GET" | "POST"; body?: Record<string, unknown> },
+  keyOverride?: string
 ): Promise<GsdResult<T>> {
-  const key = process.env.GSD_API_KEY;
+  // The override is the verify-on-save path (testGsdKey): the candidate key
+  // is used for exactly one request and never stored here.
+  const key = keyOverride ?? (await resolveGsdKey());
 
   if (!key) {
     return {
       ok: false,
-      error: { status: -1, code: "NO_KEY", message: "GSD_API_KEY is not set." },
+      error: { status: -1, code: "NO_KEY", message: "No Project-GSD API key is configured." },
     };
   }
 
@@ -237,4 +248,13 @@ export function createTask(
  */
 export function toggleTask(id: string): Promise<GsdResult<GsdTask>> {
   return gsdFetch<GsdTask>(`/tasks/${id}/toggle`, { method: "POST" });
+}
+
+/**
+ * Verifies a candidate key by listing lists with it. Used by the PUT
+ * /api/gsd-key handler before storing: any `ok: true` means GSD accepted the
+ * key. No shape guard needed — validity is the question, not the payload.
+ */
+export function testGsdKey(candidate: string): Promise<GsdResult<GsdList[]>> {
+  return gsdFetch<GsdList[]>("/lists", undefined, candidate);
 }

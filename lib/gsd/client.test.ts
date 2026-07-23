@@ -1,11 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/gsd/key", () => ({
+  resolveGsdKey: vi.fn(),
+}));
+
+import { resolveGsdKey } from "@/lib/gsd/key";
+
 import {
   createTask,
   getAllTasks,
   getLists,
   isIsoDate,
   mapGsdFailure,
+  testGsdKey,
   toggleTask,
   type GsdTask,
 } from "@/lib/gsd/client";
@@ -44,13 +51,15 @@ describe("gsd client", () => {
   const fetchMock = vi.fn();
 
   beforeEach(() => {
-    vi.stubEnv("GSD_API_KEY", KEY);
+    // mockReset (not just mockResolvedValue) so call history doesn't
+    // accumulate across tests — the testGsdKey tests assert on it.
+    vi.mocked(resolveGsdKey).mockReset();
+    vi.mocked(resolveGsdKey).mockResolvedValue(KEY);
     vi.stubGlobal("fetch", fetchMock);
     fetchMock.mockReset();
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
 
@@ -172,8 +181,8 @@ describe("gsd client", () => {
     });
   });
 
-  it("fails fast when GSD_API_KEY is unset, without calling fetch", async () => {
-    vi.stubEnv("GSD_API_KEY", "");
+  it("fails fast when no key is configured, without calling fetch", async () => {
+    vi.mocked(resolveGsdKey).mockResolvedValue(null);
 
     const result = await getLists();
 
@@ -195,11 +204,11 @@ describe("gsd client", () => {
   });
 
   describe("mapGsdFailure", () => {
-    it("maps unset-key (-1) to a 500 SERVER_ERROR", () => {
+    it("maps unset-key (-1) to a 503 NOT_CONFIGURED pointing at Settings", () => {
       expect(mapGsdFailure({ status: -1, code: "NO_KEY", message: "x" })).toEqual({
-        error: "SERVER_ERROR",
-        message: "The task service is not configured.",
-        status: 500,
+        error: "NOT_CONFIGURED",
+        message: "Add your Project-GSD key in Settings.",
+        status: 503,
       });
     });
 
@@ -251,6 +260,34 @@ describe("gsd client", () => {
       expect(isIsoDate("23-07-2026")).toBe(false);
       expect(isIsoDate("2026-07-23T00:00:00Z")).toBe(false);
       expect(isIsoDate("")).toBe(false);
+    });
+  });
+
+  describe("testGsdKey", () => {
+    it("uses the candidate key without touching the stored one", async () => {
+      fetchMock.mockResolvedValue(jsonResponse([]));
+
+      const result = await testGsdKey("gsd_candidate_not_real");
+
+      expect(result.ok).toBe(true);
+      const [url, init] = fetchMock.mock.calls[0];
+      expect(url).toBe("https://project-gsd.com/api/v1/lists");
+      expect(init.headers.Authorization).toBe("Bearer gsd_candidate_not_real");
+      expect(resolveGsdKey).not.toHaveBeenCalled();
+    });
+
+    it("surfaces a 401 rejection as a typed failure without the candidate key", async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({ error: "UNAUTHORIZED", message: "Bad key." }, 401)
+      );
+
+      const result = await testGsdKey("gsd_candidate_not_real");
+
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.status).toBe(401);
+      }
+      expect(JSON.stringify(result)).not.toContain("gsd_candidate_not_real");
     });
   });
 });
