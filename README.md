@@ -86,6 +86,7 @@ npm run build
 | `AGENTS.md` | Conventions and hard-won gotchas — **read before writing code** |
 | `docs/ai/decision-records.md` | Decisions, with superseded ones marked |
 | `docs/ai/lessons-learned.md` | Running log of things that cost time |
+| `docs/ai/backlog.md` | Understood-but-unscheduled work, written to pick up cold |
 | `docs/superpowers/plans/` | Implementation plans |
 | `.github/instructions/` | File-scoped coding standards |
 | `.github/skills/` | Multi-step workflow checklists |
