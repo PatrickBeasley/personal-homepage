@@ -145,3 +145,41 @@ export function EditIcon({ size = 15 }: { size?: number }) {
     </svg>
   );
 }
+
+export function TaskIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="m8.5 12.2 2.4 2.4 4.8-5.2" />
+    </svg>
+  );
+}
+
+export function RefreshIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M20 12a8 8 0 1 1-2.3-5.6" />
+      <path d="M20 4v4.4h-4.4" />
+    </svg>
+  );
+}
+
+export function RepeatIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="m17 2 4 4-4 4" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <path d="m7 22-4-4 4-4" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+    </svg>
+  );
+}
+
+export function FlagIcon({ size = 12 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="M5 21V4" />
+      <path d="M5 4h12l-3 4 3 4H5" />
+    </svg>
+  );
+}

@@ -13,11 +13,12 @@ import {
   LinkIcon,
   MenuIcon,
   NoteIcon,
+  TaskIcon,
   WorkIcon,
 } from "@/components/dashboard/icons";
 import { useWorkspace, type Workspace } from "@/components/dashboard/workspace-context";
 
-export type DashboardSection = "links" | "notes" | "documents" | "feeds" | "settings";
+export type DashboardSection = "links" | "notes" | "tasks" | "documents" | "feeds" | "settings";
 
 /** Per-section badge counts. Sections without a count render no badge. */
 export type DashboardCounts = Partial<Record<DashboardSection, number>>;
@@ -27,13 +28,17 @@ interface NavEntry {
   label: string;
   href: string;
   Icon: ({ size }: { size?: number }) => React.ReactElement;
-  /** The design's bottom tab bar carries the four content sections only. */
+  /**
+   * The bottom tab bar carries the content sections only (Settings stays
+   * sidebar-only). Tasks post-dates the design's original four; five tabs.
+   */
   inTabBar: boolean;
 }
 
 const NAV_ENTRIES: NavEntry[] = [
   { key: "links", label: "Links", href: "/dashboard/links", Icon: LinkIcon, inTabBar: true },
   { key: "notes", label: "Notes", href: "/dashboard/notes", Icon: NoteIcon, inTabBar: true },
+  { key: "tasks", label: "Tasks", href: "/dashboard/tasks", Icon: TaskIcon, inTabBar: true },
   { key: "documents", label: "Documents", href: "/dashboard/documents", Icon: DocIcon, inTabBar: true },
   { key: "feeds", label: "Feeds", href: "/dashboard/feeds", Icon: FeedIcon, inTabBar: true },
   { key: "settings", label: "Settings", href: "/dashboard/settings", Icon: GearIcon, inTabBar: false },
