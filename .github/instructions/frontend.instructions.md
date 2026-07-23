@@ -28,6 +28,7 @@ applyTo: "app/**,components/**,styles/**"
 - Fetch data in server components via Supabase server client — do not fetch in client components unless real-time or user-specific.
 - Use React Server Actions for form submissions where possible.
 - Keep client state minimal. Avoid global state stores unless clearly necessary.
+- A dynamic page (per-request server fetch) needs a `loading.tsx` in its route segment. Without it, the App Router can't prefetch the page and client-side navigation blocks on the fetch with no pending UI (the leaving page freezes). `app/dashboard/loading.tsx` covers the dashboard; a slow *external* fetch (e.g. Tasks → Project-GSD) should additionally stream behind its own `<Suspense>` so the navigation itself is instant. This is the *right* kind of loading state — the "avoid unnecessary spinners" rule under UX Principles is about instant operations, not per-request navigations.
 
 ## Styling and Theming
 - Use Tailwind CSS utility classes. Do not write custom CSS unless Tailwind cannot achieve the result.

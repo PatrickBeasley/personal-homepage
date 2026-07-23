@@ -22,6 +22,8 @@ Public one-pager at `/`, private dashboard at `/dashboard`. Supabase provides Po
 
 **Pages.** Server page fetches, then hands plain arrays to a `"use client"` view. No data-fetching library. No `useEffect` state synchronisation — derive from props each render. Optimistic updates use plain `useState` plus a rollback closure.
 
+**Every dashboard section is dynamic (per-request fetch), so it needs a `loading.tsx`.** Without a Suspense boundary in the segment, the App Router cannot prefetch the dynamic page and a client-side navigation blocks on that fetch showing *no* pending UI — the section you are leaving sits frozen until the data resolves, which reads as intermittent lag. `app/dashboard/loading.tsx` gives every section one instant, prefetched skeleton; keep it, and shape any new skeleton like the real card (and its fill-height) so the swap is a fill, not a jump. `loading.tsx` covers the *page* fetch, not the cookie-reading layout — that is exactly the sibling-navigation cost. A page whose data is a slow *external* call (Tasks → Project-GSD) should additionally stream that call behind its own `<Suspense>`, so the navigation itself stays instant and only the list area shows the fallback.
+
 **Workspace scoping.** Links and Notes filter by the active workspace. **Documents and Settings do not.** This is the single most common mistake here: an agent pattern-matching on Links adds `useWorkspace()` filtering and silently builds the wrong thing.
 
 ## Gotchas that have already cost time
