@@ -523,7 +523,7 @@ export default function TasksView({
   }
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow">
       <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-[18px]">
         <div className="flex min-w-[160px] flex-1 items-center gap-[10px]">
           <span className="flex text-accent">
@@ -675,7 +675,7 @@ export default function TasksView({
         </label>
       </div>
 
-      <div className="max-h-[520px] flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto">
         {open.length === 0 && done.length === 0 ? (
           <p className="px-5 py-12 text-center text-sm text-muted">
             No tasks match. Add one ↑
