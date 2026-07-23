@@ -5,6 +5,7 @@ import { useId, useMemo, useRef, useState } from "react";
 import { GearIcon } from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
 import { CATEGORY_NAME_MAX_LENGTH } from "@/lib/dashboard/api";
+import { readApiError } from "@/lib/dashboard/read-api-error";
 import type { Category, CategoryKind, Ctx } from "@/lib/dashboard/types";
 
 /**
@@ -37,34 +38,6 @@ const CHIP_CLASS =
 
 function draftKey(ctx: Ctx, kind: CategoryKind): string {
   return `${ctx}_${kind}`;
-}
-
-/**
- * Pulls a human-readable message off a failed API response. Dashboard routes
- * answer with `{ error, message }`; both fields are read before falling back, so
- * `LAST_CATEGORY` and `CATEGORY_IN_USE` reach the user as the server phrased
- * them — the reason is the whole point of those two refusals.
- */
-async function readApiError(response: Response, fallback: string): Promise<string> {
-  try {
-    const body: unknown = await response.json();
-
-    if (typeof body === "object" && body !== null) {
-      const { message, error } = body as { message?: unknown; error?: unknown };
-
-      if (typeof message === "string" && message) {
-        return message;
-      }
-
-      if (typeof error === "string" && error) {
-        return error;
-      }
-    }
-  } catch {
-    // Non-JSON error responses fall through to the generic message.
-  }
-
-  return fallback;
 }
 
 export default function SettingsView({
