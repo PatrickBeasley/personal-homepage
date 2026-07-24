@@ -91,7 +91,7 @@ export default function TasksBriefView({
             href="/dashboard/tasks"
             className="block px-5 py-[13px] text-[13px] font-semibold text-accent"
           >
-            ＋{extra} more in Tasks
+            +{extra} more in Tasks
           </Link>
         </li>
       ) : null}

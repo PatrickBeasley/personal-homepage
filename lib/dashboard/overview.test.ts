@@ -95,6 +95,10 @@ describe("noteSnippet", () => {
   it("returns empty string for empty/whitespace-only bodies", () => {
     expect(noteSnippet("<p> </p>")).toBe("");
   });
+
+  it("does not double-decode a literal escaped entity", () => {
+    expect(noteSnippet("<p>&amp;lt;tag&amp;gt;</p>")).toBe("&lt;tag&gt;");
+  });
 });
 
 describe("relativeTime", () => {

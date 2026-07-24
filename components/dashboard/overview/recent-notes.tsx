@@ -50,7 +50,7 @@ export default function RecentNotes({
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-text">
-                    {note.title}
+                    {note.title || "Untitled"}
                   </span>
                   <span className="block truncate text-xs text-text-2">
                     {noteSnippet(note.content_html)}
