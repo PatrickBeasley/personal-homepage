@@ -94,6 +94,11 @@ export default function NotesView({
 
   const editorRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  /** Live row buttons keyed by note id, for restoring focus after "← Notes". */
+  const rowRefs = useRef(new Map<string, HTMLButtonElement>());
+  /** The note id whose row should regain focus when the editor closes. */
+  const refocusRowRef = useRef<string | null>(null);
 
   // ---- autosave bookkeeping -------------------------------------------------
   // All refs, because none of it should cause a render: the only visible part
@@ -204,6 +209,21 @@ export default function NotesView({
     if (!element) {
       // The editor is unmounted (no active note), so nothing is loaded.
       loadedNoteIdRef.current = null;
+
+      // Returning from the editor on mobile ("← Notes") unmounts the focused
+      // back button, which would drop focus to <body>. Restore it to the row
+      // of the note we were viewing so keyboard and screen-reader users land
+      // where they left off. The list is in the DOM the whole time (only
+      // CSS-hidden in editor view), so its row is focusable again the moment
+      // this runs. Falls back to the search box if that row is no longer
+      // rendered — e.g. an edit made the note stop matching an active filter.
+      const refocusId = refocusRowRef.current;
+
+      if (refocusId) {
+        refocusRowRef.current = null;
+        (rowRefs.current.get(refocusId) ?? searchRef.current)?.focus();
+      }
+
       return;
     }
 
@@ -460,6 +480,9 @@ export default function NotesView({
   }
 
   function handleBack() {
+    // Remember which row to refocus once the editor closes (see the load
+    // effect); capture it before clearing the selection.
+    refocusRowRef.current = activeNoteId;
     // Save the outgoing edit before returning to the list, mirroring handleOpenNote.
     flushPending();
     setSelectedId(null);
@@ -588,6 +611,7 @@ export default function NotesView({
               </span>
               <input
                 id={searchId}
+                ref={searchRef}
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -643,6 +667,13 @@ export default function NotesView({
                   return (
                     <li key={note.id}>
                       <button
+                        ref={(el) => {
+                          if (el) {
+                            rowRefs.current.set(note.id, el);
+                          } else {
+                            rowRefs.current.delete(note.id);
+                          }
+                        }}
                         type="button"
                         onClick={() => handleOpenNote(note.id)}
                         aria-current={active ? "true" : undefined}
