@@ -243,7 +243,12 @@
     display: none !important;
   }
 
-  [data-notes-back] {
+  /*
+   * Scoped to the editor pane on purpose: the back bar only ever exists inside
+   * the editor column, so this is self-defending if the markup later moves —
+   * it can never reveal a back bar in list view.
+   */
+  [data-pane="editor"] [data-notes-back] {
     display: flex !important;
   }
 }
