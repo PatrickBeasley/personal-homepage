@@ -108,6 +108,14 @@ export function MenuIcon({ size = 20 }: { size?: number }) {
   );
 }
 
+export function ChevronLeftIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
 export function PinIcon() {
   return (
     <svg

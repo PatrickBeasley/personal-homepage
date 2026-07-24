@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { NoteIcon, SearchIcon, TrashIcon } from "@/components/dashboard/icons";
+import { ChevronLeftIcon, NoteIcon, SearchIcon, TrashIcon } from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
 import { useWorkspace } from "@/components/dashboard/workspace-context";
+import { resolveNotePane } from "@/lib/dashboard/resolve-note-pane";
 import type { Category, NoteItem } from "@/lib/dashboard/types";
 import { NOTE_TITLE_MAX_LENGTH, noteHtmlToText } from "@/lib/sanitize";
 
@@ -160,6 +161,8 @@ export default function NotesView({
     () => notes.find((note) => note.id === selectedId && note.ctx === workspace) ?? null,
     [notes, selectedId, workspace]
   );
+
+  const pane = resolveNotePane(activeNote);
 
   const visibleNotes = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -456,6 +459,12 @@ export default function NotesView({
     setSelectedId(id);
   }
 
+  function handleBack() {
+    // Save the outgoing edit before returning to the list, mirroring handleOpenNote.
+    flushPending();
+    setSelectedId(null);
+  }
+
   async function handleNewNote() {
     if (creating || !defaultCategoryId) {
       return;
@@ -533,8 +542,14 @@ export default function NotesView({
     saveState === "saving" ? "saving…" : saveState === "error" ? "not saved" : "saved";
 
   return (
-    <section className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow min-[561px]:min-h-0 min-[561px]:flex-1">
-      <div className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-[18px]">
+    <section
+      data-pane={pane}
+      className="flex flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow min-[561px]:min-h-0 min-[561px]:flex-1"
+    >
+      <div
+        data-notes-header=""
+        className="flex flex-wrap items-center gap-3 border-b border-border px-5 py-[18px]"
+      >
         <div className="flex min-w-[160px] flex-1 items-center gap-[10px]">
           <span className="flex text-accent">
             <NoteIcon />
@@ -556,7 +571,10 @@ export default function NotesView({
       </div>
 
       <div className="grid min-h-[360px] grid-cols-[minmax(180px,240px)_1fr] max-[560px]:grid-cols-1 min-[561px]:min-h-0 min-[561px]:flex-1 min-[561px]:grid-rows-1">
-        <div className="flex flex-col border-r border-border max-[560px]:border-r-0 max-[560px]:border-b min-[561px]:min-h-0">
+        <div
+          data-notes-list=""
+          className="flex flex-col border-r border-border max-[560px]:border-r-0 max-[560px]:border-b min-[561px]:min-h-0"
+        >
           <div className="flex flex-wrap gap-2 border-b border-border px-[14px] py-[10px]">
             <div className="relative basis-full">
               <label htmlFor={searchId} className="sr-only">
@@ -655,9 +673,24 @@ export default function NotesView({
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-col min-[561px]:min-h-0">
+        <div data-notes-editor="" className="flex min-w-0 flex-col min-[561px]:min-h-0">
           {activeNote ? (
             <div className="flex min-h-0 flex-1 flex-col">
+              <div
+                data-notes-back=""
+                className="hidden items-center border-b border-border px-2 py-2"
+              >
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  aria-label="Back to notes list"
+                  className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-lg px-2 pr-3 text-sm font-semibold text-accent hover:bg-accent-soft"
+                >
+                  <ChevronLeftIcon />
+                  Notes
+                </button>
+              </div>
+
               <div className="flex items-center gap-[10px] border-b border-border px-4 py-3">
                 <label htmlFor={titleId} className="sr-only">
                   Note title

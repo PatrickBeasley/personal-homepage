@@ -222,4 +222,28 @@
     padding-left: 20px !important;
     padding-right: 20px !important;
   }
+
+  /*
+   * Notes section, mobile master–detail. The card shows one pane at a time,
+   * chosen by [data-pane] on the <section> (set from resolveNotePane in
+   * notes-view.tsx). Desktop (≥561px) is unaffected — both panes stay side by
+   * side, matching design/patrick-beasley.dc.html:303-354.
+   *
+   * Unlayered + !important on purpose: these must beat the Tailwind `flex` and
+   * `hidden` utilities on the same elements, and (per the .pb-pad note) an
+   * unlayered author rule is how we win that in Tailwind v4. No transform is
+   * used — a transformed ancestor would re-anchor the fixed mobile tab bar.
+   */
+  [data-pane="editor"] [data-notes-header],
+  [data-pane="editor"] [data-notes-list] {
+    display: none !important;
+  }
+
+  [data-pane="list"] [data-notes-editor] {
+    display: none !important;
+  }
+
+  [data-notes-back] {
+    display: flex !important;
+  }
 }
