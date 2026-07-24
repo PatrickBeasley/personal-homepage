@@ -13,12 +13,13 @@ import {
   LinkIcon,
   MenuIcon,
   NoteIcon,
+  OverviewIcon,
   TaskIcon,
   WorkIcon,
 } from "@/components/dashboard/icons";
 import { useWorkspace, type Workspace } from "@/components/dashboard/workspace-context";
 
-export type DashboardSection = "links" | "notes" | "tasks" | "documents" | "feeds" | "settings";
+export type DashboardSection = "overview" | "links" | "notes" | "tasks" | "documents" | "feeds" | "settings";
 
 /** Per-section badge counts. Sections without a count render no badge. */
 export type DashboardCounts = Partial<Record<DashboardSection, number>>;
@@ -30,12 +31,14 @@ interface NavEntry {
   Icon: ({ size }: { size?: number }) => React.ReactElement;
   /**
    * The bottom tab bar carries the content sections only (Settings stays
-   * sidebar-only). Tasks post-dates the design's original four; five tabs.
+   * sidebar-only). Overview and Tasks post-date the design's original four;
+   * six tabs.
    */
   inTabBar: boolean;
 }
 
 const NAV_ENTRIES: NavEntry[] = [
+  { key: "overview", label: "Overview", href: "/dashboard", Icon: OverviewIcon, inTabBar: true },
   { key: "links", label: "Links", href: "/dashboard/links", Icon: LinkIcon, inTabBar: true },
   { key: "notes", label: "Notes", href: "/dashboard/notes", Icon: NoteIcon, inTabBar: true },
   { key: "tasks", label: "Tasks", href: "/dashboard/tasks", Icon: TaskIcon, inTabBar: true },
@@ -80,7 +83,10 @@ export default function DashboardShell({
   const closeRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  // Overview's href is the section root, so it must match exactly — the
+  // prefix rule would light it for every section.
+  const isActive = (href: string) =>
+    href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(`${href}/`);
   const activeEntry = NAV_ENTRIES.find((entry) => isActive(entry.href));
   const sectionTitle = activeEntry?.label ?? "Dashboard";
 
