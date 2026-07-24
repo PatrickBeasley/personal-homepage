@@ -9,7 +9,7 @@ import type { LinkItem } from "@/lib/dashboard/types";
  * result, and the sort key orders within a section.
  */
 
-export type LinkSortKey = "manual" | "recent" | "alpha" | "category";
+export type LinkSortKey = "manual" | "recent" | "alpha" | "category" | "used";
 
 /** A contiguous run of links rendered under one heading. */
 export interface LinkGroup {
@@ -47,6 +47,14 @@ export function compareLinks(
     const nameB = categoryNames.get(b.category_id) ?? "";
 
     return nameA.localeCompare(nameB) || a.id.localeCompare(b.id);
+  }
+
+  if (sort === "used") {
+    return (
+      b.click_count - a.click_count ||
+      a.title.localeCompare(b.title) ||
+      a.id.localeCompare(b.id)
+    );
   }
 
   // "recent" — newest first.
@@ -138,4 +146,17 @@ export function computeReorder(
   reordered.splice(toIndex, 0, moved);
 
   return reordered.map((link, index) => ({ id: link.id, sort_order: index + 1 }));
+}
+
+/**
+ * The most-clicked links for the "Frequent" surfaces: only links that have
+ * actually been clicked, ordered by the same rule as the "used" sort, capped at
+ * `limit`. Reuses `compareLinks` so the ordering can never drift from the sort.
+ */
+export function selectFrequentLinks(links: LinkItem[], limit: number): LinkItem[] {
+  const NO_NAMES = new Map<string, string>(); // "used" ignores category names
+  return links
+    .filter((link) => link.click_count > 0)
+    .sort((a, b) => compareLinks(a, b, "used", NO_NAMES))
+    .slice(0, limit);
 }
