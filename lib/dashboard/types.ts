@@ -46,6 +46,10 @@ export interface LinkItem {
   pinned: boolean;
   created_at: string;
   updated_at: string;
+  /** All-time click count, incremented by the click beacon. */
+  click_count: number;
+  /** When the link was last clicked; null if never. */
+  last_clicked_at: string | null;
 }
 
 /**

@@ -527,6 +527,8 @@ export default function LinksView({
       pinned: false,
       created_at: now,
       updated_at: now,
+      click_count: 0,
+      last_clicked_at: null,
     };
 
     setLinks((previous) => [optimistic, ...previous]);
