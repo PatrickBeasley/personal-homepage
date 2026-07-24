@@ -61,10 +61,13 @@ already exists; nothing new is introduced to state.
 
 New mobile-only button, `aria-label="Back to notes list"`. On activate it calls
 `flushPending()` (so the outgoing edit is saved, matching `handleOpenNote`,
-`notes-view.tsx:449`) then `setSelectedId(null)`. The save status indicator
-(`saveLabel`, `notes-view.tsx:532`) moves into the back bar so it stays visible in
-editor view. The back button sits apart from the destructive delete button (which
-stays in the title row) so leaving a note is never a mis-tap.
+`notes-view.tsx:449`) then `setSelectedId(null)`. The formatting toolbar already
+carries the save status (`saveLabel`, `notes-view.tsx:757-763`) and is part of the
+editor view, so it stays visible on mobile; the back bar therefore needs only the
+back affordance, and the save status is **not** duplicated into it — a second
+`aria-live` region would double-announce every save. The back button sits apart from
+the destructive delete button (which stays in the title row) so leaving a note is
+never a mis-tap.
 
 ### Deliberately excluded
 
@@ -84,8 +87,8 @@ Reuses the section's existing ≤560px / ≥561px boundary
 ## Accessibility
 
 - Back button is a real `<button>` with an explicit `aria-label`.
-- Save status keeps its `role="status" aria-live="polite"` when relocated to the
-  back bar.
+- The single save-status live region (`role="status" aria-live="polite"`) stays in
+  the formatting toolbar; the back bar adds no second live region.
 - New-note title focus (`focusTitleRef`) is retained; opening an existing note on
   mobile should leave focus reachable in the now-visible editor.
 
