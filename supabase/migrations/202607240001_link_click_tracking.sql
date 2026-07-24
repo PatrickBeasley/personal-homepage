@@ -18,6 +18,11 @@ create or replace function public.increment_link_click(link_id uuid)
 returns public.dashboard_links
 language sql
 security invoker
+-- Pin the search_path (advisor 0011): the body fully-qualifies
+-- public.dashboard_links, and built-ins like now() resolve via pg_catalog,
+-- which is always implicitly searched — so an empty search_path is safe and
+-- closes the mutable-search_path warning.
+set search_path = ''
 as $$
   update public.dashboard_links
      set click_count = click_count + 1,
