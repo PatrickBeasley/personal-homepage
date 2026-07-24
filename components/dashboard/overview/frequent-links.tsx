@@ -11,7 +11,7 @@ const LIMIT = 5;
 /** Host label for the sub-line, mirroring the Links section's presentation. */
 function hostLabel(url: string): string {
   try {
-    return new URL(url).host.replace(/^www\./, "");
+    return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return url;
   }

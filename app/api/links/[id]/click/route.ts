@@ -10,7 +10,7 @@ import type { LinkItem } from "@/lib/dashboard/types";
  * Atomically increments the link's click_count (and last_clicked_at) via the
  * increment_link_click RPC, which runs security invoker so the admin RLS policy
  * still gates the write. Returns the updated link entity (200); an unknown id —
- * or an id RLS refuses — comes back as NULL from the RPC and is a 404.
+ * or an id RLS refuses — comes back as no row from the RPC (setof) and is a 404.
  *
  * Called by navigator.sendBeacon, which ignores the response; the body exists
  * for the wire convention and for reading the stored value in verification.

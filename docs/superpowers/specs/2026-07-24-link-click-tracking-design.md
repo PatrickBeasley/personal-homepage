@@ -135,8 +135,8 @@ Used by both link surfaces so the transport lives in one place.
   `OverviewCard` (title "Frequent links", `href="/dashboard/links"`).
   - Shows only links with `click_count > 0`, top 5. Each row: title, host,
     accent-tinted count badge; the title links out with `target="_blank"` and
-    calls `recordLinkClick(id)` (optimistically bumping local state, same as
-    the Links surface).
+    calls `recordLinkClick(id)` (fires the beacon only, no optimistic bump —
+    a click navigates away from /dashboard, unlike the Links surface).
   - Empty state (no clicks yet): "Your most-used links will show here once you
     start clicking."
 - A note query error on the page already degrades to an inline notes-error card;

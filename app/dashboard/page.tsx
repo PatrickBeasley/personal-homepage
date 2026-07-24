@@ -46,12 +46,14 @@ export default async function OverviewPage() {
       .select(LINK_COLUMNS)
       .eq("ctx", "work")
       .order("click_count", { ascending: false })
+      .order("title", { ascending: true })
       .limit(5),
     supabase
       .from("dashboard_links")
       .select(LINK_COLUMNS)
       .eq("ctx", "home")
       .order("click_count", { ascending: false })
+      .order("title", { ascending: true })
       .limit(5),
   ]);
 
