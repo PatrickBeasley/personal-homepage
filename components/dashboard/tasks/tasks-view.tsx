@@ -10,6 +10,7 @@ import {
   TaskIcon,
 } from "@/components/dashboard/icons";
 import { useToast } from "@/components/dashboard/toast";
+import { localTodayIso } from "@/lib/dashboard/overview";
 import { readApiError } from "@/lib/dashboard/read-api-error";
 import {
   buildListRank,
@@ -86,15 +87,6 @@ const CONTROL_CLASS =
  * Such a row has no GSD id yet, so it cannot be toggled.
  */
 const OPTIMISTIC_PREFIX = "optimistic-";
-
-/** Local YYYY-MM-DD for "today", in the viewer's timezone. */
-function localTodayIso(): string {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-
-  return `${now.getFullYear()}-${month}-${day}`;
-}
 
 /** "Jul 21", or "Today" when the date matches todayIso. */
 function formatDue(iso: string, todayIso: string | null): string {
