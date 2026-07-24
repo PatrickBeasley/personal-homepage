@@ -183,3 +183,12 @@ export function FlagIcon({ size = 12 }: { size?: number }) {
     </svg>
   );
 }
+
+export function OverviewIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg {...base} width={size} height={size} strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="m14.8 9.2-1.9 4.7-4.7 1.9 1.9-4.7z" />
+    </svg>
+  );
+}
