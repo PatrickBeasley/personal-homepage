@@ -92,6 +92,7 @@ export default function NotesView({
   });
 
   const editorRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
 
   // ---- autosave bookkeeping -------------------------------------------------
   // All refs, because none of it should cause a render: the only visible part
@@ -107,7 +108,8 @@ export default function NotesView({
 
   /** Which note's markup is currently in the editor DOM. */
   const loadedNoteIdRef = useRef<string | null>(null);
-  const focusEditorRef = useRef(false);
+  /** Set when a just-created note should open with the title field focused. */
+  const focusTitleRef = useRef(false);
 
   const searchId = useId();
   const filterId = useId();
@@ -209,9 +211,11 @@ export default function NotesView({
     loadedNoteIdRef.current = activeNoteId;
     element.innerHTML = activeNoteHtml;
 
-    if (focusEditorRef.current) {
-      focusEditorRef.current = false;
-      element.focus();
+    if (focusTitleRef.current) {
+      focusTitleRef.current = false;
+      // A new note opens with the title focused so the first keystroke names
+      // it; Enter then hands off to the body (see handleTitleKeyDown).
+      titleRef.current?.focus();
     }
   }, [activeNoteId, activeNoteHtml]);
 
@@ -400,6 +404,16 @@ export default function NotesView({
     queueSave(activeNote.id, { title: value });
   }
 
+  function handleTitleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+    // Enter in the single-line title hands off to the body, matching the
+    // top-to-bottom flow of filling in a note. The isComposing guard keeps a
+    // mid-character Enter (IME input) from being hijacked.
+    if (event.key === "Enter" && !event.nativeEvent.isComposing) {
+      event.preventDefault();
+      editorRef.current?.focus();
+    }
+  }
+
   function handleCategoryChange(value: string) {
     if (!activeNote) {
       return;
@@ -466,7 +480,7 @@ export default function NotesView({
       const created: NoteItem = await response.json();
 
       setNotes((previous) => [created, ...previous]);
-      focusEditorRef.current = true;
+      focusTitleRef.current = true;
       setSelectedId(created.id);
       setSaveState("saved");
     } catch (error) {
@@ -650,8 +664,10 @@ export default function NotesView({
                 </label>
                 <input
                   id={titleId}
+                  ref={titleRef}
                   value={activeNote.title}
                   onChange={(event) => handleTitleChange(event.target.value)}
+                  onKeyDown={handleTitleKeyDown}
                   onBlur={() => flushPending()}
                   maxLength={NOTE_TITLE_MAX_LENGTH}
                   placeholder="Untitled"
