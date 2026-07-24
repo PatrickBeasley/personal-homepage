@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import FrequentLinks from "@/components/dashboard/overview/frequent-links";
 import OverviewCard from "@/components/dashboard/overview/overview-card";
 import RecentNotes from "@/components/dashboard/overview/recent-notes";
 import TasksBrief from "@/components/dashboard/overview/tasks-brief";
 import TasksBriefSkeleton from "@/components/dashboard/overview/tasks-brief-skeleton";
-import { NOTE_COLUMNS } from "@/lib/dashboard/api";
-import type { NoteItem } from "@/lib/dashboard/types";
+import { LINK_COLUMNS, NOTE_COLUMNS } from "@/lib/dashboard/api";
+import type { LinkItem, NoteItem } from "@/lib/dashboard/types";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -27,7 +28,7 @@ export default async function OverviewPage() {
   // The dashboard layout has already established that the caller is the admin.
   const supabase = await createServerSupabaseClient();
 
-  const [workResult, homeResult] = await Promise.all([
+  const [workResult, homeResult, workLinksResult, homeLinksResult] = await Promise.all([
     supabase
       .from("dashboard_notes")
       .select(NOTE_COLUMNS)
@@ -40,6 +41,20 @@ export default async function OverviewPage() {
       .eq("ctx", "home")
       .order("updated_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("dashboard_links")
+      .select(LINK_COLUMNS)
+      .eq("ctx", "work")
+      .order("click_count", { ascending: false })
+      .order("title", { ascending: true })
+      .limit(5),
+    supabase
+      .from("dashboard_links")
+      .select(LINK_COLUMNS)
+      .eq("ctx", "home")
+      .order("click_count", { ascending: false })
+      .order("title", { ascending: true })
+      .limit(5),
   ]);
 
   const notesError = workResult.error ?? homeResult.error;
@@ -50,6 +65,16 @@ export default async function OverviewPage() {
 
   const workNotes: NoteItem[] = workResult.data ?? [];
   const homeNotes: NoteItem[] = homeResult.data ?? [];
+
+  if (workLinksResult.error || homeLinksResult.error) {
+    console.error(
+      "Overview links load error:",
+      workLinksResult.error ?? homeLinksResult.error
+    );
+  }
+
+  const workLinks: LinkItem[] = workLinksResult.data ?? [];
+  const homeLinks: LinkItem[] = homeLinksResult.data ?? [];
 
   return (
     <>
@@ -70,6 +95,8 @@ export default async function OverviewPage() {
       ) : (
         <RecentNotes workNotes={workNotes} homeNotes={homeNotes} />
       )}
+
+      <FrequentLinks workLinks={workLinks} homeLinks={homeLinks} />
     </>
   );
 }

@@ -6,6 +6,7 @@ import {
   computeReorder,
   groupByCategory,
   partitionPinned,
+  selectFrequentLinks,
 } from "./link-order";
 
 function link(overrides: Partial<LinkItem> & { id: string }): LinkItem {
@@ -19,6 +20,8 @@ function link(overrides: Partial<LinkItem> & { id: string }): LinkItem {
     pinned: false,
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
+    click_count: 0,
+    last_clicked_at: null,
     ...overrides,
   };
 }
@@ -69,6 +72,23 @@ describe("compareLinks", () => {
     expect(compareLinks(a, b, "manual", NAMES)).toBeLessThan(0);
     expect(compareLinks(b, a, "manual", NAMES)).toBeGreaterThan(0);
   });
+
+  it("orders by click_count descending for used", () => {
+    const a = link({ id: "a", click_count: 5 });
+    const b = link({ id: "b", click_count: 20 });
+    const c = link({ id: "c", click_count: 12 });
+
+    expect([a, b, c].sort((x, y) => compareLinks(x, y, "used", NAMES))).toEqual([b, c, a]);
+  });
+
+  it("breaks used ties by title then id", () => {
+    const a = link({ id: "a2", title: "Beta", click_count: 7 });
+    const b = link({ id: "a1", title: "Alpha", click_count: 7 });
+    const c = link({ id: "a3", title: "Alpha", click_count: 7 });
+
+    // Alpha before Beta; the two Alphas break by id (a1 < a3).
+    expect([a, b, c].sort((x, y) => compareLinks(x, y, "used", NAMES))).toEqual([b, c, a]);
+  });
 });
 
 describe("partitionPinned", () => {
@@ -112,6 +132,30 @@ describe("groupByCategory", () => {
 
   it("returns no groups for no links", () => {
     expect(groupByCategory([], NAMES)).toEqual([]);
+  });
+});
+
+describe("selectFrequentLinks", () => {
+  it("excludes zero-count links and orders by used", () => {
+    const links = [
+      link({ id: "z", click_count: 0 }),
+      link({ id: "a", click_count: 3 }),
+      link({ id: "b", click_count: 9 }),
+    ];
+
+    expect(selectFrequentLinks(links, 5).map((l) => l.id)).toEqual(["b", "a"]);
+  });
+
+  it("caps at the limit", () => {
+    const links = [1, 2, 3, 4, 5, 6].map((n) =>
+      link({ id: `l${n}`, click_count: n })
+    );
+
+    expect(selectFrequentLinks(links, 3).map((l) => l.id)).toEqual(["l6", "l5", "l4"]);
+  });
+
+  it("returns empty when nothing has been clicked", () => {
+    expect(selectFrequentLinks([link({ id: "a", click_count: 0 })], 5)).toEqual([]);
   });
 });
 

@@ -24,6 +24,7 @@ import {
   type LinkSortKey,
 } from "@/lib/dashboard/link-order";
 import { readApiError } from "@/lib/dashboard/read-api-error";
+import { recordLinkClick } from "@/lib/dashboard/record-click";
 import { resolveEditingLink } from "@/lib/dashboard/resolve-editing-link";
 import type { Category, LinkItem } from "@/lib/dashboard/types";
 
@@ -32,6 +33,7 @@ const SORT_OPTIONS: { value: LinkSortKey; label: string }[] = [
   { value: "recent", label: "Recent" },
   { value: "alpha", label: "A–Z" },
   { value: "category", label: "Category" },
+  { value: "used", label: "Most used" },
 ];
 
 /** localStorage key for the remembered Links view (sort, grouping, filter). */
@@ -255,6 +257,8 @@ function LinkRow({
   onEdit,
   onTogglePin,
   onDelete,
+  onActivate,
+  rankBadge,
   dragHandleProps,
   rowProps,
 }: {
@@ -264,6 +268,8 @@ function LinkRow({
   onEdit: (link: LinkItem) => void;
   onTogglePin: (link: LinkItem) => void;
   onDelete: (link: LinkItem) => void;
+  onActivate: (link: LinkItem) => void;
+  rankBadge: boolean;
   // Element-general (not <button>-specific) because the handle is now the
   // leading letter avatar, a <span>, not a separate grip button.
   dragHandleProps?: React.HTMLAttributes<HTMLElement>;
@@ -312,6 +318,7 @@ function LinkRow({
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => onActivate(link)}
           className="block truncate text-sm font-semibold text-text hover:text-accent"
         >
           {link.title}
@@ -320,6 +327,31 @@ function LinkRow({
           {hostLabel(link.url)}
         </span>
       </div>
+
+      <span
+        aria-label={`${link.click_count} clicks`}
+        className={[
+          "flex flex-none items-center gap-[5px] rounded-[20px] border px-[9px] py-[3px] font-mono text-[11px] tabular-nums",
+          rankBadge
+            ? "border-transparent bg-accent-soft text-accent"
+            : "border-border bg-surface-2 text-muted",
+        ].join(" ")}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          width="11"
+          height="11"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M4 4l7 16 2-7 7-2z" />
+        </svg>
+        {link.click_count}
+      </span>
 
       <span className="whitespace-nowrap rounded-[20px] border border-border bg-surface-2 px-[9px] py-[3px] text-[11px] text-text-2">
         {categoryName}
@@ -412,6 +444,18 @@ export default function LinksView({
   function handleSortChange(value: LinkSortKey) {
     setSort(value);
     persistPrefs({ sort: value });
+  }
+
+  // Fire-and-forget beacon plus an optimistic local bump so the badge updates
+  // and a "used" sort re-orders immediately. No rollback — the server value
+  // wins on the next page load (see record-click.ts).
+  function handleLinkActivate(link: LinkItem) {
+    recordLinkClick(link.id);
+    setLinks((prev) =>
+      prev.map((item) =>
+        item.id === link.id ? { ...item, click_count: item.click_count + 1 } : item
+      )
+    );
   }
 
   function handleGroupedChange(value: boolean) {
@@ -527,6 +571,8 @@ export default function LinksView({
       pinned: false,
       created_at: now,
       updated_at: now,
+      click_count: 0,
+      last_clicked_at: null,
     };
 
     setLinks((previous) => [optimistic, ...previous]);
@@ -1035,6 +1081,8 @@ export default function LinksView({
                       onEdit={handleEditStart}
                       onTogglePin={handleTogglePin}
                       onDelete={handleDelete}
+                      onActivate={handleLinkActivate}
+                      rankBadge={sort === "used"}
                     />
                   ))}
                 </ul>
@@ -1059,6 +1107,8 @@ export default function LinksView({
                       onEdit={handleEditStart}
                       onTogglePin={handleTogglePin}
                       onDelete={handleDelete}
+                      onActivate={handleLinkActivate}
+                      rankBadge={sort === "used"}
                       dragHandleProps={getHandleProps(index)}
                       rowProps={getRowProps(index)}
                     />

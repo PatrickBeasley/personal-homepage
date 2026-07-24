@@ -44,7 +44,7 @@ export function apiError(error: ApiErrorCode, message: string, status: number) {
 export type DashboardSupabaseClient = Awaited<ReturnType<typeof createServerSupabaseClient>>;
 
 export const LINK_COLUMNS =
-  "id, ctx, category_id, title, url, description, sort_order, pinned, created_at, updated_at";
+  "id, ctx, category_id, title, url, description, sort_order, pinned, created_at, updated_at, click_count, last_clicked_at";
 
 export const NOTE_COLUMNS = "id, ctx, category_id, title, content_html, created_at, updated_at";
 
